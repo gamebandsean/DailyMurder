@@ -74,10 +74,17 @@ function getVictimResponse(ctx: ResponseContext): string {
   const { character, case_ } = ctx;
   const prefix = getPersonalityPrefix(character);
   
+  const feelingWord = {
+    'feared': 'feared',
+    'hated': 'hated', 
+    'resented': 'resented',
+    'envied': 'envied'
+  }[character.victimRelationship.feeling];
+  
   const responses = [
-    `${prefix}${case_.victimName}? ${case_.victimBackground} As for my relationship with them... ${character.victimRelationship.problem.toLowerCase()}. I won't pretend I'm heartbroken.`,
+    `${prefix}${case_.victimName}? ${case_.victimBackground} As for my relationship with the victim... ${character.victimRelationship.problem}. I won't pretend I'm heartbroken.`,
     `${prefix}I'll be honest with you, detective. ${character.victimRelationship.problem}. But that doesn't mean I wanted them dead.`,
-    `${prefix}The victim was... complicated. ${case_.victimDescription.toLowerCase()}. And yes, ${character.victimRelationship.problem.toLowerCase()}. I ${character.victimRelationship.feeling} them for it.`,
+    `${prefix}The victim was... complicated. ${case_.victimDescription}. And yes, ${character.victimRelationship.problem}. I ${feelingWord} them for it.`,
   ];
   
   return responses[Math.floor(Math.random() * responses.length)];
@@ -163,7 +170,14 @@ function getMotiveResponse(ctx: ResponseContext): string {
   const { character, case_ } = ctx;
   const prefix = getPersonalityPrefix(character);
   
-  return `${prefix}My problem with ${case_.victimName}? ${character.victimRelationship.problem}. I ${character.victimRelationship.feeling} them for it. But plenty of people had reasons to want them gone - I'm hardly unique in that regard.`;
+  const feelingWord = {
+    'feared': 'feared',
+    'hated': 'hated', 
+    'resented': 'resented',
+    'envied': 'envied'
+  }[character.victimRelationship.feeling];
+  
+  return `${prefix}My problem with ${case_.victimName}? ${character.victimRelationship.problem}. I ${feelingWord} them for it. But plenty of people had reasons to want them gone - I'm hardly unique in that regard.`;
 }
 
 // Get general/fallback response

@@ -47,45 +47,45 @@ const CHARACTER_ITEMS = [
   { name: 'envelope knife', description: 'An antique envelope knife', couldBeWeapon: true },
 ];
 
-// Alibi templates
+// Alibi templates (first-person)
 const ALIBIS = [
-  { description: 'Was on a phone call with their accountant', witness: 'The accountant confirms the call' },
-  { description: 'Was having dinner at the Riverside Restaurant', witness: 'The waiter remembers serving them' },
-  { description: 'Was attending a charity event downtown', witness: 'Multiple guests saw them there' },
-  { description: 'Was at the hospital visiting a sick friend', witness: 'Hospital records confirm the visit' },
-  { description: 'Was stuck in traffic after a car accident', witness: 'Police report confirms the delay' },
-  { description: 'Was working late at their office', witness: 'Security cameras show them there' },
+  { description: 'I was on a phone call with my accountant', witness: 'My accountant can confirm the call' },
+  { description: 'I was having dinner at the Riverside Restaurant', witness: 'The waiter remembers serving me' },
+  { description: 'I was attending a charity event downtown', witness: 'Multiple guests saw me there' },
+  { description: 'I was at the hospital visiting a sick friend', witness: 'Hospital records confirm my visit' },
+  { description: 'I was stuck in traffic after a car accident', witness: 'The police report confirms I was delayed' },
+  { description: 'I was working late at my office', witness: 'Security cameras show me there' },
 ];
 
-// No alibi reasons
+// No alibi reasons (first-person)
 const NO_ALIBI_REASONS = [
-  'Claims to have been home alone reading',
-  'Says they were taking a long walk to clear their head',
-  'Was supposedly in their room with a headache',
-  'Claims to have been in the garden, alone',
-  'Says they were in the wine cellar selecting bottles',
+  'I was home alone, reading',
+  'I was taking a long walk to clear my head',
+  'I was in my room with a terrible headache',
+  'I was in the garden, alone with my thoughts',
+  'I was in the wine cellar selecting bottles for dinner',
 ];
 
-// Problem with victim templates
+// Problem with victim templates (first-person)
 const VICTIM_PROBLEMS = [
-  { problem: 'The victim was threatening to expose their affair', feeling: 'feared' as const },
-  { problem: 'The victim owed them a substantial amount of money', feeling: 'resented' as const },
-  { problem: 'The victim had ruined their career years ago', feeling: 'hated' as const },
-  { problem: 'The victim was planning to write them out of the will', feeling: 'feared' as const },
-  { problem: 'The victim knew about their criminal past', feeling: 'feared' as const },
-  { problem: 'The victim had stolen their business idea', feeling: 'hated' as const },
-  { problem: 'The victim had humiliated them publicly', feeling: 'resented' as const },
-  { problem: 'The victim was blackmailing them', feeling: 'hated' as const },
+  { problem: 'The victim was threatening to expose my affair', feeling: 'feared' as const },
+  { problem: 'The victim owed me a substantial amount of money', feeling: 'resented' as const },
+  { problem: 'The victim had ruined my career years ago', feeling: 'hated' as const },
+  { problem: 'The victim was planning to write me out of the will', feeling: 'feared' as const },
+  { problem: 'The victim knew about my criminal past', feeling: 'feared' as const },
+  { problem: 'The victim had stolen my business idea', feeling: 'hated' as const },
+  { problem: 'The victim had humiliated me publicly', feeling: 'resented' as const },
+  { problem: 'The victim was blackmailing me', feeling: 'hated' as const },
 ];
 
-// Dislike reasons between characters
+// Dislike reasons between characters (first-person)
 const DISLIKE_REASONS = [
-  'They had a bitter falling out over money years ago',
-  'There\'s romantic jealousy between them',
-  'One betrayed the other\'s trust in the past',
-  'They competed for the victim\'s favor and attention',
-  'Family feud going back generations',
-  'One exposed the other\'s secret to the victim',
+  'We had a bitter falling out over money years ago',
+  'There\'s romantic jealousy between us',
+  'They betrayed my trust in the past',
+  'We competed for the victim\'s favor and attention',
+  'Our families have feuded for generations',
+  'They exposed my secret to the victim',
 ];
 
 // Times of death
