@@ -58,7 +58,8 @@ export default function InterrogationModal({ visible, character, onClose }: Prop
     onClose();
   };
 
-  if (!character) return null;
+  // Don't render anything if not visible or no character
+  if (!visible || !character) return null;
 
   return (
     <Modal
