@@ -16,7 +16,7 @@ import InterrogationModal from '../components/InterrogationModal';
 const { width, height } = Dimensions.get('window');
 
 // Import victim image
-const victimImage = require('../../assets/characters/victim.png');
+const victimImage = require('../../assets/characters/Body2.png');
 
 interface Props {
   onNavigateToAccusation: () => void;

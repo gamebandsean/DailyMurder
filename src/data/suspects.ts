@@ -1,11 +1,11 @@
 import { Suspect } from '../types';
 
 // Import character images
-const suspect1 = require('../../assets/characters/suspect1.png');
-const suspect2 = require('../../assets/characters/suspect2.png');
-const suspect3 = require('../../assets/characters/suspect3.png');
-const suspect4 = require('../../assets/characters/suspect4.png');
-const suspect5 = require('../../assets/characters/suspect5.png');
+const suspect1 = require('../../assets/characters/Brown.png');      // Young man in brown blazer
+const suspect2 = require('../../assets/characters/MustacheMan.png'); // Older man with mustache
+const suspect3 = require('../../assets/characters/green.png');       // Blonde woman in green
+const suspect4 = require('../../assets/characters/WomaninYel.png');  // Woman in yellow hat
+const suspect5 = require('../../assets/characters/Blue.png');        // Older man in blue shirt
 
 export const ALL_SUSPECTS: Suspect[] = [
   {
