@@ -34,7 +34,7 @@ A daily mystery puzzle game built with React Native and Expo. Play as a detectiv
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/DailyMurder.git
+git clone https://github.com/gamebandsean/DailyMurder.git
 
 # Navigate to the project
 cd DailyMurder
