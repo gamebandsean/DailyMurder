@@ -132,32 +132,32 @@ const styles = StyleSheet.create({
   },
   header: {
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 16,
   },
   title: {
-    fontSize: 48,
+    fontSize: 42,
     fontWeight: '800',
     color: '#D4A574',
-    letterSpacing: 6,
+    letterSpacing: 5,
   },
   subtitle: {
-    fontSize: 18,
+    fontSize: 16,
     color: '#8B7355',
-    marginTop: 8,
-    letterSpacing: 3,
+    marginTop: 6,
+    letterSpacing: 2,
   },
   victimInfo: {
     alignItems: 'center',
-    marginBottom: 41,
+    marginBottom: 25,
   },
   victimLabel: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '600',
     color: '#E8DDD4',
     letterSpacing: 2,
   },
   victimDescription: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#8B7355',
     fontStyle: 'italic',
     marginTop: 4,
@@ -165,14 +165,13 @@ const styles = StyleSheet.create({
   crimeScene: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 8,
   },
   victimImage: {
-    width: '60%',
-    height: 270,
+    width: '55%',
+    height: 220,
   },
   suspectsSection: {
-    marginTop: 33,
+    marginTop: 25,
   },
   suspectsLabel: {
     fontSize: 14,
@@ -197,7 +196,7 @@ const styles = StyleSheet.create({
   },
   suspectImage: {
     width: '100%',
-    height: 180, // 50% bigger (was 90, now 135 -> rounded to 180 for 2x frame)
+    height: 140,
     backgroundColor: '#4A3228',
   },
   suspectInfo: {
@@ -212,16 +211,16 @@ const styles = StyleSheet.create({
   },
   arrestButton: {
     backgroundColor: '#8B2323',
-    paddingVertical: 20,
+    paddingVertical: 16,
     borderRadius: 10,
     borderWidth: 3,
     borderColor: '#A52A2A',
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 20,
   },
   arrestButtonText: {
     color: '#FFF',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '700',
     letterSpacing: 3,
   },

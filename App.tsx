@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   },
   gameFrame: {
     width: 960,
-    height: 1440, // 2:3 aspect ratio (2x size)
+    height: 1100, // Adjusted to fit content
     backgroundColor: '#2C1810',
     borderRadius: 16,
     overflow: 'hidden',
