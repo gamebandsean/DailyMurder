@@ -161,17 +161,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   crimeScene: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    minHeight: 180,
+    marginVertical: 8,
   },
   victimImage: {
-    width: '90%',
-    height: '100%',
+    width: '50%',
+    height: 180,
   },
   suspectsSection: {
-    marginTop: 24,
+    marginTop: 8,
   },
   suspectsLabel: {
     fontSize: 14,
