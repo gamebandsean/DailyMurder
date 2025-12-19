@@ -212,17 +212,17 @@ export function generateDailyCase(seed?: number): DailyCase {
   const numSwaps = random() < 0.5 ? 1 : 2;
   
   for (let i = 0; i < numSwaps; i++) {
-    // Pick two different characters to swap
+    // Pick two different suspects to swap items
     const shuffledForSwap = shuffleArray([...selectedSuspects], random);
-    const char1 = shuffledForSwap[0];
-    const char2 = shuffledForSwap[1];
+    const suspect1 = shuffledForSwap[0];
+    const suspect2 = shuffledForSwap[1];
     
-    const item1 = currentItems.get(char1.id)!;
-    const item2 = currentItems.get(char2.id)!;
+    const item1 = currentItems.get(suspect1.id)!;
+    const item2 = currentItems.get(suspect2.id)!;
     
     // Swap items
-    currentItems.set(char1.id, { ...item2, originalOwnerId: item2.originalOwnerId });
-    currentItems.set(char2.id, { ...item1, originalOwnerId: item1.originalOwnerId });
+    currentItems.set(suspect1.id, { ...item2, originalOwnerId: item2.originalOwnerId });
+    currentItems.set(suspect2.id, { ...item1, originalOwnerId: item1.originalOwnerId });
     
     // Record the swap
     const isAccidental = random() < 0.6;
@@ -231,17 +231,17 @@ export function generateDailyCase(seed?: number): DailyCase {
       : pickRandom(INTENTIONAL_SWAP_REASONS, random);
     
     itemSwaps.push({
-      fromCharacterId: char1.id,
-      toCharacterId: char2.id,
+      fromCharacterId: suspect1.id,
+      toCharacterId: suspect2.id,
       itemId: item1.id,
-      reason: `${char2.suspect.name} ${reason}`,
+      reason: `${suspect2.name} ${reason}`,
     });
     
     itemSwaps.push({
-      fromCharacterId: char2.id,
-      toCharacterId: char1.id,
+      fromCharacterId: suspect2.id,
+      toCharacterId: suspect1.id,
       itemId: item2.id,
-      reason: `${char1.suspect.name} ${reason}`,
+      reason: `${suspect1.name} ${reason}`,
     });
   }
   
