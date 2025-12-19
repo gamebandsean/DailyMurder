@@ -100,7 +100,7 @@ export default function GameScreen({ onNavigateToAccusation }: Props) {
         style={styles.arrestButton}
         onPress={onNavigateToAccusation}
       >
-        <Text style={styles.arrestButtonText}>MAKE AN ARREST</Text>
+        <Text style={styles.arrestButtonText}>🔗 MAKE AN ARREST 🔗</Text>
       </TouchableOpacity>
 
       {/* Interrogation Modal */}
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   },
   victimInfo: {
     alignItems: 'center',
-    marginBottom: 25,
+    marginBottom: 75,
   },
   victimLabel: {
     fontSize: 18,
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     height: 220,
   },
   suspectsSection: {
-    marginTop: 25,
+    marginTop: 75,
   },
   suspectsLabel: {
     fontSize: 14,
@@ -217,6 +217,7 @@ const styles = StyleSheet.create({
     borderColor: '#A52A2A',
     alignItems: 'center',
     marginTop: 20,
+    marginBottom: 25,
   },
   arrestButtonText: {
     color: '#FFF',
