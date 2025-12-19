@@ -20,11 +20,23 @@ export interface CharacterState {
   victimRelationship: {
     problem: string;
     feeling: 'resented' | 'hated' | 'feared' | 'envied';
+    isSecret?: boolean;
   };
   alibi: {
     hasAlibi: boolean;
     description: string;
     witness?: string;
+    // For the killer's false alibi
+    isFalse?: boolean;
+    falseClaimLocation?: string;
+    actualLocation?: string;
+    // For the alibi witness who saw the killer
+    sawKiller?: boolean;
+    sawKillerWhere?: string;
+    sawKillerWhen?: string;
+    // For the motive witness
+    knowsKillerSecret?: boolean;
+    killerSecret?: string;
   };
   item: {
     name: string;
@@ -34,6 +46,7 @@ export interface CharacterState {
   isGuilty: boolean;
   whereabouts: string;
   secretKnowledge: string[];
+  role?: 'killer' | 'alibiWitness' | 'motiveWitness' | 'redHerring';
 }
 
 export interface MurderDetails {
@@ -42,6 +55,13 @@ export interface MurderDetails {
   location: string;
   motive: string;
   howItHappened: string;
+  keyEvidence?: {
+    alibiWitness: string;
+    alibiContradiction: string;
+    motiveWitness: string;
+    motiveSecret: string;
+    murderWeapon: string;
+  };
 }
 
 export interface DailyCase {

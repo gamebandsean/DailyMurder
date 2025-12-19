@@ -4,18 +4,12 @@ import {
   Text,
   Image,
   StyleSheet,
-  Modal,
   TextInput,
   TouchableOpacity,
   ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-  Dimensions,
 } from 'react-native';
 import { CharacterState } from '../types';
 import { useGame } from '../context/GameContext';
-
-const { width, height } = Dimensions.get('window');
 
 interface Props {
   visible: boolean;
@@ -62,34 +56,25 @@ export default function InterrogationModal({ visible, character, onClose }: Prop
   if (!visible || !character) return null;
 
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      transparent={true}
-      onRequestClose={handleClose}
-    >
-      <KeyboardAvoidingView 
-        style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
-        <View style={styles.modalContainer}>
-          {/* Header with character info */}
-          <View style={styles.header}>
-            <Image
-              source={character.suspect.image}
-              style={styles.characterImage}
-              resizeMode="cover"
-            />
-            <View style={styles.characterInfo}>
-              <Text style={styles.characterName}>{character.suspect.name}</Text>
-              <Text style={styles.characterOccupation}>{character.suspect.occupation}</Text>
-            </View>
-            <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
+    <View style={styles.overlay}>
+      <View style={styles.modalContainer}>
+        {/* Left side - Character */}
+        <View style={styles.characterPanel}>
+          <Image
+            source={character.suspect.image}
+            style={styles.characterImage}
+            resizeMode="cover"
+          />
+          <Text style={styles.characterName}>{character.suspect.name}</Text>
+          <Text style={styles.characterOccupation}>{character.suspect.occupation}</Text>
+          
+          <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+            <Text style={styles.closeButtonText}>END INTERROGATION</Text>
+          </TouchableOpacity>
+        </View>
 
-          {/* Conversation area */}
+        {/* Right side - Conversation */}
+        <View style={styles.conversationPanel}>
           <ScrollView 
             ref={scrollViewRef}
             style={styles.conversationArea}
@@ -98,8 +83,7 @@ export default function InterrogationModal({ visible, character, onClose }: Prop
             {/* Initial prompt */}
             <View style={styles.systemMessage}>
               <Text style={styles.systemText}>
-                You are interrogating {character.suspect.name}. Ask anything about the crime, 
-                the victim, their whereabouts, or other suspects.
+                Ask about their alibi, what they saw, their items, or what they know about others.
               </Text>
             </View>
 
@@ -137,7 +121,6 @@ export default function InterrogationModal({ visible, character, onClose }: Prop
               onChangeText={setQuestion}
               onSubmitEditing={handleAsk}
               returnKeyType="send"
-              multiline={false}
             />
             <TouchableOpacity 
               style={[styles.sendButton, !question.trim() && styles.sendButtonDisabled]}
@@ -148,69 +131,78 @@ export default function InterrogationModal({ visible, character, onClose }: Prop
             </TouchableOpacity>
           </View>
         </View>
-      </KeyboardAvoidingView>
-    </Modal>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    backgroundColor: '#2C1810',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    height: height * 0.85,
-    borderTopWidth: 2,
-    borderLeftWidth: 2,
-    borderRightWidth: 2,
-    borderColor: '#4A3228',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#4A3228',
-    backgroundColor: '#1A0F0A',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-  },
-  characterImage: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    borderWidth: 2,
-    borderColor: '#D4A574',
-  },
-  characterInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  characterName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#D4A574',
-  },
-  characterOccupation: {
-    fontSize: 14,
-    color: '#8B7355',
-    marginTop: 2,
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#3D2617',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  closeButtonText: {
-    fontSize: 18,
+  modalContainer: {
+    width: '92%',
+    height: '88%',
+    backgroundColor: '#2C1810',
+    borderRadius: 12,
+    flexDirection: 'row',
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#4A3228',
+  },
+  // Character Panel
+  characterPanel: {
+    width: 200,
+    backgroundColor: '#1A0F0A',
+    padding: 20,
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: '#4A3228',
+  },
+  characterImage: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+    borderWidth: 3,
+    borderColor: '#D4A574',
+    marginBottom: 16,
+  },
+  characterName: {
+    fontSize: 16,
+    fontWeight: '700',
     color: '#D4A574',
+    textAlign: 'center',
+  },
+  characterOccupation: {
+    fontSize: 12,
+    color: '#8B7355',
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  closeButton: {
+    marginTop: 'auto',
+    backgroundColor: '#4A3228',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  closeButtonText: {
+    color: '#D4A574',
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
+  // Conversation Panel
+  conversationPanel: {
+    flex: 1,
+    backgroundColor: '#241510',
   },
   conversationArea: {
     flex: 1,
@@ -221,21 +213,20 @@ const styles = StyleSheet.create({
   },
   systemMessage: {
     backgroundColor: '#3D2617',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 16,
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 12,
   },
   systemText: {
-    fontSize: 13,
+    fontSize: 11,
     color: '#8B7355',
     fontStyle: 'italic',
     textAlign: 'center',
-    lineHeight: 18,
   },
   messageBubble: {
-    maxWidth: '85%',
-    padding: 12,
-    borderRadius: 16,
+    maxWidth: '80%',
+    padding: 10,
+    borderRadius: 10,
     marginBottom: 8,
   },
   questionBubble: {
@@ -245,12 +236,12 @@ const styles = StyleSheet.create({
   },
   answerBubble: {
     alignSelf: 'flex-start',
-    backgroundColor: '#4A3228',
+    backgroundColor: '#3D2617',
     borderBottomLeftRadius: 4,
   },
   messageText: {
-    fontSize: 15,
-    lineHeight: 22,
+    fontSize: 13,
+    lineHeight: 18,
   },
   questionText: {
     color: '#FFF',
@@ -260,12 +251,12 @@ const styles = StyleSheet.create({
   },
   typingIndicator: {
     color: '#8B7355',
-    fontSize: 20,
-    letterSpacing: 4,
+    fontSize: 16,
+    letterSpacing: 3,
   },
   inputArea: {
     flexDirection: 'row',
-    padding: 16,
+    padding: 12,
     borderTopWidth: 1,
     borderTopColor: '#4A3228',
     backgroundColor: '#1A0F0A',
@@ -273,19 +264,19 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     backgroundColor: '#3D2617',
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    fontSize: 15,
+    borderRadius: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 13,
     color: '#E8DDD4',
-    marginRight: 12,
+    marginRight: 10,
     borderWidth: 1,
     borderColor: '#4A3228',
   },
   sendButton: {
     backgroundColor: '#8B2323',
     paddingHorizontal: 20,
-    borderRadius: 20,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -295,8 +286,7 @@ const styles = StyleSheet.create({
   sendButtonText: {
     color: '#FFF',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
     letterSpacing: 1,
   },
 });
-

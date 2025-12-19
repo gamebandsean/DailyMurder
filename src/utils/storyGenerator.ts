@@ -6,104 +6,101 @@ const VICTIMS = [
   {
     name: 'Theodore Blackwood',
     description: 'A wealthy industrialist found dead in his study',
-    background: 'Theodore built his fortune through ruthless business tactics, making many enemies along the way. He was known for his cold demeanor and willingness to betray anyone for profit.',
+    background: 'Theodore built his fortune through ruthless business tactics, making many enemies along the way.',
   },
   {
     name: 'Margaret Holloway',
     description: 'A socialite discovered lifeless in the garden',
-    background: 'Margaret was the heart of high society, but beneath her charming exterior lay a woman who collected secrets and used them as weapons. She knew too much about everyone.',
+    background: 'Margaret was the heart of high society, but beneath her charm she collected secrets as weapons.',
   },
   {
     name: 'Dr. Richard Crane',
     description: 'A renowned physician found collapsed in the library',
-    background: 'Dr. Crane was celebrated publicly but privately conducted unethical experiments. He held damaging information on several prominent families.',
+    background: 'Dr. Crane was celebrated publicly but privately conducted unethical experiments.',
   },
   {
     name: 'Eleanor Ashford',
     description: 'An aging heiress found dead at her vanity',
-    background: 'Eleanor controlled her family with an iron fist, threatening to disinherit anyone who displeased her. Her will was about to be changed.',
+    background: 'Eleanor controlled her family with an iron fist, threatening to disinherit anyone who displeased her.',
   },
 ];
 
-// Murder weapons (all stabbing/piercing for consistency)
-const WEAPONS = [
-  { name: 'antique letter opener', description: 'A sharp brass letter opener with an ivory handle' },
-  { name: 'kitchen knife', description: 'A professional chef\'s knife, wickedly sharp' },
+// Murder weapons (what the killer has on them)
+const MURDER_WEAPONS = [
+  { name: 'antique letter opener', description: 'A sharp brass letter opener with an ivory handle, stained with blood' },
+  { name: 'kitchen knife', description: 'A professional chef\'s knife, recently cleaned but with traces of blood' },
   { name: 'garden shears', description: 'Heavy-duty pruning shears with pointed tips' },
   { name: 'ornate hatpin', description: 'A long, decorative hatpin with a jeweled end' },
   { name: 'ice pick', description: 'A simple but deadly ice pick from the bar' },
-  { name: 'scissors', description: 'A pair of sharp sewing scissors' },
 ];
 
-// Possible items characters can have (all could be stabbing weapons)
-const CHARACTER_ITEMS = [
-  { name: 'pocket knife', description: 'A well-worn folding pocket knife', couldBeWeapon: true },
-  { name: 'letter opener', description: 'A slim silver letter opener', couldBeWeapon: true },
-  { name: 'fountain pen', description: 'A sharp-tipped fountain pen with a metal nib', couldBeWeapon: true },
-  { name: 'nail file', description: 'A long, pointed metal nail file', couldBeWeapon: true },
-  { name: 'screwdriver', description: 'A flathead screwdriver with a sharp tip', couldBeWeapon: true },
-  { name: 'knitting needle', description: 'A long steel knitting needle', couldBeWeapon: true },
-  { name: 'corkscrew', description: 'A sharp corkscrew from the wine collection', couldBeWeapon: true },
-  { name: 'envelope knife', description: 'An antique envelope knife', couldBeWeapon: true },
+// Innocent items (what non-killers have)
+const INNOCENT_ITEMS = [
+  { name: 'pocket watch', description: 'An antique gold pocket watch, a family heirloom' },
+  { name: 'reading glasses', description: 'Wire-rimmed reading glasses in a leather case' },
+  { name: 'cigarette case', description: 'A silver cigarette case, monogrammed' },
+  { name: 'handkerchief', description: 'A silk handkerchief with embroidered initials' },
+  { name: 'notebook', description: 'A small leather-bound notebook filled with appointments' },
+  { name: 'lipstick', description: 'An expensive French lipstick in a gold tube' },
+  { name: 'fountain pen', description: 'A fine fountain pen, clearly expensive' },
+  { name: 'keys', description: 'A ring of keys to various rooms in the house' },
 ];
 
-// Alibi templates (first-person)
-const ALIBIS = [
-  { description: 'I was on a phone call with my accountant', witness: 'My accountant can confirm the call' },
-  { description: 'I was having dinner at the Riverside Restaurant', witness: 'The waiter remembers serving me' },
-  { description: 'I was attending a charity event downtown', witness: 'Multiple guests saw me there' },
-  { description: 'I was at the hospital visiting a sick friend', witness: 'Hospital records confirm my visit' },
-  { description: 'I was stuck in traffic after a car accident', witness: 'The police report confirms I was delayed' },
-  { description: 'I was working late at my office', witness: 'Security cameras show me there' },
+// Real alibis (verifiable)
+const REAL_ALIBIS = [
+  { location: 'the dining room', activity: 'having dinner', witness: null }, // witness filled dynamically
+  { location: 'the parlor', activity: 'playing cards', witness: null },
+  { location: 'the veranda', activity: 'smoking a cigar', witness: null },
+  { location: 'the music room', activity: 'listening to the gramophone', witness: null },
 ];
 
-// No alibi reasons (first-person)
-const NO_ALIBI_REASONS = [
-  'I was home alone, reading',
-  'I was taking a long walk to clear my head',
-  'I was in my room with a terrible headache',
-  'I was in the garden, alone with my thoughts',
-  'I was in the wine cellar selecting bottles for dinner',
+// False alibis (what the killer claims)
+const FALSE_ALIBIS = [
+  { claimed: 'I was in my room, resting', actualLocation: 'near the study' },
+  { claimed: 'I was in the garden, taking a walk', actualLocation: 'in the hallway outside the study' },
+  { claimed: 'I was in the library, reading', actualLocation: 'coming from the victim\'s room' },
+  { claimed: 'I was in the kitchen, getting a drink', actualLocation: 'leaving the scene quickly' },
 ];
 
-// Problem with victim templates (first-person)
-const VICTIM_PROBLEMS = [
-  { problem: 'The victim was threatening to expose my affair', feeling: 'feared' as const },
-  { problem: 'The victim owed me a substantial amount of money', feeling: 'resented' as const },
-  { problem: 'The victim had ruined my career years ago', feeling: 'hated' as const },
-  { problem: 'The victim was planning to write me out of the will', feeling: 'feared' as const },
-  { problem: 'The victim knew about my criminal past', feeling: 'feared' as const },
-  { problem: 'The victim had stolen my business idea', feeling: 'hated' as const },
-  { problem: 'The victim had humiliated me publicly', feeling: 'resented' as const },
-  { problem: 'The victim was blackmailing me', feeling: 'hated' as const },
+// Motives
+const MOTIVES = [
+  { 
+    motive: 'The victim was blackmailing me over an affair',
+    publicKnowledge: false,
+    whoKnows: null, // filled dynamically - another character who knows
+  },
+  { 
+    motive: 'The victim was about to write me out of the will',
+    publicKnowledge: false,
+    whoKnows: null,
+  },
+  { 
+    motive: 'The victim ruined my career years ago',
+    publicKnowledge: true, // everyone might know this
+    whoKnows: null,
+  },
+  { 
+    motive: 'The victim knew about my criminal past',
+    publicKnowledge: false,
+    whoKnows: null,
+  },
+  {
+    motive: 'The victim stole my inheritance',
+    publicKnowledge: false,
+    whoKnows: null,
+  },
 ];
 
-// Dislike reasons between characters (first-person)
+// Times
+const TIMES_OF_DEATH = ['9:00 PM', '9:30 PM', '10:00 PM', '10:30 PM'];
+const MURDER_LOCATIONS = ['the study', 'the library', 'the conservatory', 'the drawing room'];
+
+// Dislike reasons
 const DISLIKE_REASONS = [
-  'We had a bitter falling out over money years ago',
-  'There\'s romantic jealousy between us',
-  'They betrayed my trust in the past',
-  'We competed for the victim\'s favor and attention',
-  'Our families have feuded for generations',
-  'They exposed my secret to the victim',
-];
-
-// Times of death
-const TIMES_OF_DEATH = [
-  '9:00 PM',
-  '9:30 PM',
-  '10:00 PM',
-  '10:30 PM',
-  '11:00 PM',
-];
-
-// Locations
-const MURDER_LOCATIONS = [
-  'the study',
-  'the library',
-  'the garden',
-  'the wine cellar',
-  'the conservatory',
+  'We had a bitter falling out over money',
+  'They betrayed my trust years ago',
+  'We competed for the victim\'s attention',
+  'They spread rumors about me',
 ];
 
 function pickRandom<T>(array: T[], random: () => number): T {
@@ -114,7 +111,7 @@ export function generateDailyCase(seed?: number): DailyCase {
   const actualSeed = seed ?? getTodaySeed();
   const random = seededRandom(actualSeed);
   
-  // Get case number from seed
+  // Case number
   const baseDate = new Date('2024-01-01');
   const today = new Date();
   const daysDiff = Math.floor((today.getTime() - baseDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -127,139 +124,217 @@ export function generateDailyCase(seed?: number): DailyCase {
   const shuffledSuspects = shuffleArray([...ALL_SUSPECTS], random);
   const selectedSuspects = shuffledSuspects.slice(0, 4);
   
-  // Pick murderer (first one after shuffle)
-  const murdererIndex = Math.floor(random() * 4);
-  const murdererId = selectedSuspects[murdererIndex].id;
+  // Assign roles:
+  // Index 0 = KILLER
+  // Index 1 = ALIBI WITNESS (saw the killer somewhere they shouldn't be)
+  // Index 2 = MOTIVE WITNESS (knows about the killer's secret motive)
+  // Index 3 = RED HERRING (has alibi with index 1 or 2)
+  
+  const killerIndex = 0;
+  const alibiWitnessIndex = 1;
+  const motiveWitnessIndex = 2;
+  const redHerringIndex = 3;
+  
+  const murdererId = selectedSuspects[killerIndex].id;
   
   // Pick murder details
   const timeOfDeath = pickRandom(TIMES_OF_DEATH, random);
-  const murderWeapon = pickRandom(WEAPONS, random);
   const murderLocation = pickRandom(MURDER_LOCATIONS, random);
+  const murderWeapon = pickRandom(MURDER_WEAPONS, random);
   
-  // Shuffle problems and alibis
-  const shuffledProblems = shuffleArray([...VICTIM_PROBLEMS], random);
-  const shuffledAlibis = shuffleArray([...ALIBIS], random);
-  const shuffledNoAlibis = shuffleArray([...NO_ALIBI_REASONS], random);
-  const shuffledItems = shuffleArray([...CHARACTER_ITEMS], random);
+  // The killer's false alibi
+  const falseAlibi = pickRandom(FALSE_ALIBIS, random);
   
-  // Pick two characters who dislike each other (not the murderer for more complexity)
-  const nonMurdererIndices = selectedSuspects
-    .map((_, i) => i)
-    .filter(i => i !== murdererIndex);
-  const dislikeIndex1 = nonMurdererIndices[Math.floor(random() * nonMurdererIndices.length)];
-  const remainingIndices = nonMurdererIndices.filter(i => i !== dislikeIndex1);
-  const dislikeIndex2 = remainingIndices.length > 0 
-    ? remainingIndices[Math.floor(random() * remainingIndices.length)]
-    : (murdererIndex + 1) % 4;
+  // The killer's motive (secret, known by motive witness)
+  const killerMotive = pickRandom(MOTIVES, random);
+  
+  // Shuffle innocent items
+  const shuffledItems = shuffleArray([...INNOCENT_ITEMS], random);
+  const shuffledRealAlibis = shuffleArray([...REAL_ALIBIS], random);
+  
+  // Two characters who dislike each other (for complexity)
   const dislikeReason = pickRandom(DISLIKE_REASONS, random);
-  
-  // Determine who gets alibis (at least 2 non-murderers)
-  // Murderer NEVER has alibi, at least 2 others DO have alibis
-  const alibiAssignments: boolean[] = [false, false, false, false];
-  let alibiCount = 0;
-  for (let i = 0; i < 4; i++) {
-    if (i !== murdererIndex) {
-      if (alibiCount < 2) {
-        alibiAssignments[i] = true;
-        alibiCount++;
-      } else {
-        alibiAssignments[i] = random() > 0.5;
-      }
-    }
-  }
   
   // Build character states
   const characters: CharacterState[] = selectedSuspects.map((suspect, index) => {
-    const isGuilty = index === murdererIndex;
+    const isKiller = index === killerIndex;
+    const isAlibiWitness = index === alibiWitnessIndex;
+    const isMotiveWitness = index === motiveWitnessIndex;
+    const isRedHerring = index === redHerringIndex;
     
-    // Build relationships with other characters
+    // ITEM: Killer has murder weapon, others have innocent items
+    const item = isKiller
+      ? { name: murderWeapon.name, description: murderWeapon.description, couldBeWeapon: true }
+      : { name: shuffledItems[index].name, description: shuffledItems[index].description, couldBeWeapon: false };
+    
+    // ALIBI
+    let alibi: CharacterState['alibi'];
+    let whereabouts: string;
+    
+    if (isKiller) {
+      // Killer lies about alibi
+      alibi = {
+        hasAlibi: false,
+        description: falseAlibi.claimed,
+        witness: undefined,
+        isFalse: true,
+        falseClaimLocation: falseAlibi.claimed,
+        actualLocation: falseAlibi.actualLocation,
+      };
+      whereabouts = falseAlibi.claimed;
+    } else if (isAlibiWitness) {
+      // This witness was somewhere and SAW the killer
+      const realAlibi = shuffledRealAlibis[0];
+      alibi = {
+        hasAlibi: true,
+        description: `I was in ${realAlibi.location}, ${realAlibi.activity}`,
+        witness: selectedSuspects[redHerringIndex].name, // confirmed by red herring
+        sawKiller: true,
+        sawKillerWhere: falseAlibi.actualLocation,
+        sawKillerWhen: `around ${timeOfDeath}`,
+      };
+      whereabouts = `I was in ${realAlibi.location}, ${realAlibi.activity}. ${selectedSuspects[redHerringIndex].name} was with me.`;
+    } else if (isRedHerring) {
+      // Red herring was with alibi witness
+      const realAlibi = shuffledRealAlibis[0];
+      alibi = {
+        hasAlibi: true,
+        description: `I was in ${realAlibi.location}, ${realAlibi.activity}`,
+        witness: selectedSuspects[alibiWitnessIndex].name,
+      };
+      whereabouts = `I was in ${realAlibi.location}, ${realAlibi.activity} with ${selectedSuspects[alibiWitnessIndex].name}.`;
+    } else if (isMotiveWitness) {
+      // Motive witness was alone but knows the killer's secret
+      const realAlibi = shuffledRealAlibis[1];
+      alibi = {
+        hasAlibi: false,
+        description: `I was in ${realAlibi.location}, ${realAlibi.activity}, alone`,
+        witness: undefined,
+        knowsKillerSecret: true,
+        killerSecret: killerMotive.motive,
+      };
+      whereabouts = `I was in ${realAlibi.location}, ${realAlibi.activity}. I was alone, unfortunately.`;
+    } else {
+      alibi = {
+        hasAlibi: false,
+        description: 'I was in my room',
+        witness: undefined,
+      };
+      whereabouts = 'I was in my room.';
+    }
+    
+    // VICTIM RELATIONSHIP
+    let victimRelationship: CharacterState['victimRelationship'];
+    if (isKiller) {
+      victimRelationship = {
+        problem: killerMotive.motive,
+        feeling: 'hated' as const,
+        isSecret: !killerMotive.publicKnowledge,
+      };
+    } else {
+      // Other characters have minor grievances
+      const minorProblems = [
+        { problem: 'The victim could be difficult to work with', feeling: 'resented' as const },
+        { problem: 'The victim and I had some disagreements', feeling: 'resented' as const },
+        { problem: 'The victim owed me a favor they never repaid', feeling: 'resented' as const },
+        { problem: 'The victim was sometimes dismissive of me', feeling: 'resented' as const },
+      ];
+      victimRelationship = { ...minorProblems[index % minorProblems.length], isSecret: false };
+    }
+    
+    // RELATIONSHIPS with other characters
     const relationships: Relationship[] = selectedSuspects
       .filter(s => s.id !== suspect.id)
       .map(other => {
         const otherIndex = selectedSuspects.findIndex(s => s.id === other.id);
         
-        // Check if these two dislike each other
-        if ((index === dislikeIndex1 && otherIndex === dislikeIndex2) ||
-            (index === dislikeIndex2 && otherIndex === dislikeIndex1)) {
+        // Alibi witness and red herring are friendly (they alibi each other)
+        if ((index === alibiWitnessIndex && otherIndex === redHerringIndex) ||
+            (index === redHerringIndex && otherIndex === alibiWitnessIndex)) {
           return {
             targetId: other.id,
-            feeling: 'dislikes' as const,
-            reason: dislikeReason,
+            feeling: 'friendly' as const,
+            reason: 'We spent the evening together',
           };
         }
         
-        // Random relationship
-        const feelings: Array<'friendly' | 'neutral'> = ['friendly', 'neutral'];
+        // Motive witness dislikes the killer (knows their secret)
+        if (index === motiveWitnessIndex && otherIndex === killerIndex) {
+          return {
+            targetId: other.id,
+            feeling: 'dislikes' as const,
+            reason: 'I know things about them that would shock you',
+          };
+        }
+        
+        // Random other relationships
         return {
           targetId: other.id,
-          feeling: pickRandom(feelings, random),
-          reason: pickRandom(['We get along fine', 'We\'re acquaintances', 'We\'ve known each other for years'], random),
+          feeling: 'neutral' as const,
+          reason: 'We\'re acquaintances',
         };
       });
     
-    // Victim relationship
-    const victimProblem = shuffledProblems[index % shuffledProblems.length];
-    
-    // Alibi
-    const hasAlibi = alibiAssignments[index];
-    const alibiData = hasAlibi 
-      ? shuffledAlibis[index % shuffledAlibis.length]
-      : { description: shuffledNoAlibis[index % shuffledNoAlibis.length], witness: undefined };
-    
-    // Item - murderer gets the murder weapon, others get random items
-    const item = isGuilty
-      ? { name: murderWeapon.name, description: murderWeapon.description, couldBeWeapon: true }
-      : shuffledItems[index % shuffledItems.length];
-    
-    // Whereabouts at time of murder
-    const whereabouts = hasAlibi
-      ? alibiData.description
-      : isGuilty
-        ? `Was in ${murderLocation} - claims they were just passing through`
-        : shuffledNoAlibis[index % shuffledNoAlibis.length];
-    
-    // Secret knowledge - what each character might have seen/heard
+    // SECRET KNOWLEDGE - what each character knows
     const secretKnowledge: string[] = [];
-    if (!isGuilty && random() > 0.5) {
-      secretKnowledge.push(`Heard footsteps near ${murderLocation} around ${timeOfDeath}`);
+    
+    if (isAlibiWitness) {
+      // This is the KEY EVIDENCE - they saw the killer!
+      secretKnowledge.push(
+        `I saw ${selectedSuspects[killerIndex].name} ${falseAlibi.actualLocation} around ${timeOfDeath}. They looked agitated.`
+      );
+      secretKnowledge.push(
+        `${selectedSuspects[killerIndex].name} wasn't where they claim to have been. I saw them myself.`
+      );
     }
-    if (!isGuilty && random() > 0.6) {
-      const murderer = selectedSuspects[murdererIndex];
-      secretKnowledge.push(`Noticed ${murderer.name} acting strangely that evening`);
+    
+    if (isMotiveWitness) {
+      // They know the killer's secret motive
+      secretKnowledge.push(
+        `I know that ${selectedSuspects[killerIndex].name} had a serious problem with the victim. ${killerMotive.motive}.`
+      );
+      secretKnowledge.push(
+        `${selectedSuspects[killerIndex].name} had more reason to want the victim dead than they're letting on.`
+      );
     }
-    if (random() > 0.7) {
-      secretKnowledge.push(`Knows the victim was planning something big`);
+    
+    if (isRedHerring) {
+      // They confirm the alibi witness's story
+      secretKnowledge.push(
+        `${selectedSuspects[alibiWitnessIndex].name} and I were together all evening. They're telling the truth.`
+      );
     }
     
     return {
       suspect,
       relationships,
-      victimRelationship: {
-        problem: victimProblem.problem,
-        feeling: victimProblem.feeling,
-      },
-      alibi: {
-        hasAlibi,
-        description: alibiData.description,
-        witness: alibiData.witness,
-      },
+      victimRelationship,
+      alibi,
       item,
-      isGuilty,
+      isGuilty: isKiller,
       whereabouts,
       secretKnowledge,
+      role: isKiller ? 'killer' : isAlibiWitness ? 'alibiWitness' : isMotiveWitness ? 'motiveWitness' : 'redHerring',
     };
   });
   
   // Build murder details
-  const murderer = selectedSuspects[murdererIndex];
-  const murdererState = characters[murdererIndex];
+  const killer = selectedSuspects[killerIndex];
+  const killerState = characters[killerIndex];
   
   const murderDetails: MurderDetails = {
     timeOfDeath,
     weapon: murderWeapon.name,
     location: murderLocation,
-    motive: murdererState.victimRelationship.problem,
-    howItHappened: `${murderer.name} confronted ${victim.name} in ${murderLocation} at approximately ${timeOfDeath}. An argument ensued about ${murdererState.victimRelationship.problem.toLowerCase()}. In a moment of rage, ${murderer.name} grabbed the ${murderWeapon.name} and struck. The ${murderWeapon.description.toLowerCase()} was found nearby, wiped clean but with traces of blood.`,
+    motive: killerMotive.motive,
+    howItHappened: `${killer.name} confronted the victim in ${murderLocation} at ${timeOfDeath}. ${killerMotive.motive}. In a fit of rage, ${killer.name} used their ${murderWeapon.name} to commit the murder. They then attempted to establish a false alibi, claiming "${falseAlibi.claimed}" - but ${selectedSuspects[alibiWitnessIndex].name} saw them ${falseAlibi.actualLocation}.`,
+    keyEvidence: {
+      alibiWitness: selectedSuspects[alibiWitnessIndex].name,
+      alibiContradiction: `${killer.name} claims "${falseAlibi.claimed}" but ${selectedSuspects[alibiWitnessIndex].name} saw them ${falseAlibi.actualLocation}`,
+      motiveWitness: selectedSuspects[motiveWitnessIndex].name,
+      motiveSecret: killerMotive.motive,
+      murderWeapon: murderWeapon.name,
+    },
   };
   
   return {
@@ -278,4 +353,3 @@ export function generateDailyCase(seed?: number): DailyCase {
     murdererId,
   };
 }
-
