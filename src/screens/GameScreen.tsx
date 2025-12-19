@@ -66,7 +66,7 @@ export default function GameScreen({ onNavigateToAccusation }: Props) {
           Found stabbed in {currentCase.crimeDetails.location} at {currentCase.crimeDetails.timeOfDeath}
         </Text>
         <Text style={styles.weaponInfo}>
-          Murder weapon: {currentCase.crimeDetails.murderWeapon}
+          Cause of death: Stabbing
         </Text>
       </View>
 
