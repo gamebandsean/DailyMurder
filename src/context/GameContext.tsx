@@ -9,6 +9,7 @@ interface GameContextType {
   askQuestion: (characterId: string, question: string) => string;
   makeAccusation: (suspectId: string) => boolean;
   resetGame: () => void;
+  revealItem: (characterId: string) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -17,6 +18,7 @@ const initialGameState: GameState = {
   currentCase: null,
   interrogationHistory: [],
   learnedSecrets: [],
+  revealedItems: [],
   hasAccused: false,
   accusedId: null,
   wasCorrect: null,
@@ -42,7 +44,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     if (!character) return "Character not found.";
     
-    const { response, revealedSecret } = generateResponse(
+    const { response, revealedSecret, revealedItemId } = generateResponse(
       question,
       character,
       gameState.currentCase.characters,
@@ -53,6 +55,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     // Update state with new info
     setGameState(prev => {
       const newLearnedSecrets = [...prev.learnedSecrets];
+      const newRevealedItems = [...prev.revealedItems];
       
       // If a secret was revealed, track it
       if (revealedSecret) {
@@ -68,9 +71,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
       }
       
+      // If an item was revealed, track it
+      if (revealedItemId && !newRevealedItems.includes(revealedItemId)) {
+        newRevealedItems.push(revealedItemId);
+      }
+      
       return {
         ...prev,
         learnedSecrets: newLearnedSecrets,
+        revealedItems: newRevealedItems,
         interrogationHistory: [
           ...prev.interrogationHistory,
           {
@@ -84,6 +93,18 @@ export function GameProvider({ children }: { children: ReactNode }) {
     });
     
     return response;
+  };
+
+  const revealItem = (characterId: string) => {
+    setGameState(prev => {
+      if (prev.revealedItems.includes(characterId)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        revealedItems: [...prev.revealedItems, characterId],
+      };
+    });
   };
 
   const makeAccusation = (suspectId: string): boolean => {
@@ -123,6 +144,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         askQuestion,
         makeAccusation,
         resetGame,
+        revealItem,
       }}
     >
       {children}

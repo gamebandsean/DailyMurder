@@ -21,6 +21,7 @@ function analyzeQuestion(question: string, ctx: ResponseContext): {
   askingIfGuilty: boolean;
   presentingEvidence: boolean;
   presentedSecret: string | null;
+  askingAboutSwap: boolean;
 } {
   const q = question.toLowerCase();
   
@@ -52,7 +53,7 @@ function analyzeQuestion(question: string, ctx: ResponseContext): {
   
   return {
     aboutAlibi: /\b(alibi|where were you|where was|at the time|that night|whereabouts|when)\b/i.test(q),
-    aboutItem: /\b(item|carrying|have on|holding|weapon|possess|pocket)\b/i.test(q),
+    aboutItem: /\b(item|carrying|have on|holding|weapon|possess|pocket|what do you have|what are you carrying|on your person|show me)\b/i.test(q),
     aboutMotive: /\b(motive|reason|why would|grudge|problem|issue|relationship|feel about)\b/i.test(q),
     aboutVictim: /\b(victim|dead|deceased|murdered|killed)\b/i.test(q),
     aboutSuspicions: /\b(suspect|think|who did|guilty|killer|murderer|trust|suspicious)\b/i.test(q),
@@ -61,6 +62,7 @@ function analyzeQuestion(question: string, ctx: ResponseContext): {
     askingIfGuilty: /\b(did you (do|kill|murder)|are you (guilty|the killer)|you killed|confess|admit)\b/i.test(q),
     presentingEvidence: presentedSecret !== null || /\b(someone told me|i heard|i know that you|confronted with)\b/i.test(q),
     presentedSecret,
+    askingAboutSwap: /\b(swap|exchange|originally|belong|whose|not yours|switched)\b/i.test(q),
   };
 }
 
@@ -102,21 +104,48 @@ function getAlibiResponse(ctx: ResponseContext): string {
   }
 }
 
-function getItemResponse(ctx: ResponseContext): string {
-  const { character } = ctx;
+function getItemResponse(ctx: ResponseContext, askingAboutSwap: boolean): { response: string; revealedItemId: string } {
+  const { character, case_ } = ctx;
   const prefix = getPrefix(character);
+  const item = character.item;
   
-  if (character.isGuilty && character.item.isMurderWeapon) {
+  // Check if item was swapped (current owner is not original owner)
+  const wasSwapped = item.originalOwnerId !== character.suspect.id;
+  const originalOwner = ctx.allCharacters.find(c => c.suspect.id === item.originalOwnerId);
+  
+  if (character.isGuilty && item.isMurderWeapon) {
     const hasBeenConfronted = character.presentedEvidence.length > 0;
-    if (hasBeenConfronted) {
-      return `${prefix}*looks away* Yes, I have the ${character.item.name}. ${character.item.description}. But I can explain...`;
+    if (hasBeenConfronted || askingAboutSwap) {
+      if (wasSwapped) {
+        return {
+          response: `${prefix}*looks defensive* Yes, I have the ${item.name}. ${item.emoji} But it's not mine! I got it from ${originalOwner?.suspect.name || 'someone else'} earlier. They must have... it must have been swapped somehow!`,
+          revealedItemId: character.suspect.id,
+        };
+      }
+      return {
+        response: `${prefix}*looks away* Yes, I have the ${item.name}. ${item.emoji} ${item.description}. But I can explain... I was holding it for someone!`,
+        revealedItemId: character.suspect.id,
+      };
     } else {
       // Lie about having a different item
-      return `${prefix}I just have my pocket watch with me. Nothing unusual.`;
+      return {
+        response: `${prefix}I just have my pocket watch with me. Nothing unusual.`,
+        revealedItemId: '', // Don't reveal yet when lying
+      };
     }
   }
   
-  return `${prefix}I have my ${character.item.name}. ${character.item.description}. Is that relevant?`;
+  // Non-guilty character reveals their item honestly
+  let response = `${prefix}I have my ${item.name}. ${item.emoji} ${item.description}`;
+  
+  if (wasSwapped && askingAboutSwap) {
+    response += ` Actually, this originally belonged to ${originalOwner?.suspect.name || 'someone else'}. We must have swapped items at some point.`;
+  }
+  
+  return {
+    response: response + '. Is that relevant?',
+    revealedItemId: character.suspect.id,
+  };
 }
 
 function getMotiveResponse(ctx: ResponseContext): string {
@@ -215,7 +244,7 @@ function getConfrontedResponse(ctx: ResponseContext, presentedSecret: string): s
   
   if (character.isGuilty) {
     // Killer breaks down when confronted
-    return `${prefix}*face goes pale* How do you... where did you hear that? *sighs heavily* Fine. You want the truth? ${character.motive.description}. I was at ${character.alibi.description}. And yes, I have the ${character.item.name}. But I'm telling you, I didn't do it! You have to believe me!`;
+    return `${prefix}*face goes pale* How do you... where did you hear that? *sighs heavily* Fine. You want the truth? ${character.motive.description}. I was at ${character.alibi.description}. And yes, I have the ${character.item.name}. ${character.item.emoji} But I'm telling you, I didn't do it! You have to believe me!`;
   }
   
   // Non-killer opens up
@@ -254,7 +283,7 @@ export function generateResponse(
   allCharacters: CharacterState[],
   case_: DailyCase,
   learnedSecrets: { aboutId: string; secret: string; fromId: string }[] = []
-): { response: string; revealedSecret?: { aboutId: string; secret: string } } {
+): { response: string; revealedSecret?: { aboutId: string; secret: string }; revealedItemId?: string } {
   
   const ctx: ResponseContext = { character, allCharacters, case_, question, learnedSecrets };
   const analysis = analyzeQuestion(question, ctx);
@@ -263,12 +292,20 @@ export function generateResponse(
   if (analysis.presentingEvidence && analysis.presentedSecret) {
     character.presentedEvidence.push(analysis.presentedSecret);
     character.hasOpenedUp = true;
-    return { response: getConfrontedResponse(ctx, analysis.presentedSecret) };
+    const response = getConfrontedResponse(ctx, analysis.presentedSecret);
+    // When confronted, also reveal their item
+    return { response, revealedItemId: character.suspect.id };
   }
   
   // If asking if guilty
   if (analysis.askingIfGuilty) {
     return { response: getGuiltyDenialResponse(ctx) };
+  }
+  
+  // About item - reveals the item!
+  if (analysis.aboutItem) {
+    const { response, revealedItemId } = getItemResponse(ctx, analysis.askingAboutSwap);
+    return { response, revealedItemId };
   }
   
   // If asking about another character (might reveal a secret)
@@ -296,11 +333,6 @@ export function generateResponse(
   // About alibi
   if (analysis.aboutAlibi) {
     return { response: getAlibiResponse(ctx) };
-  }
-  
-  // About item
-  if (analysis.aboutItem) {
-    return { response: getItemResponse(ctx) };
   }
   
   // About motive/victim

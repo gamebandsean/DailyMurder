@@ -21,6 +21,26 @@ export interface RelationshipDetail {
   secretRevealed: boolean;
 }
 
+// Item that a character is carrying
+export interface CharacterItem {
+  id: string;
+  name: string;
+  description: string;
+  isSharp: boolean;
+  isMurderWeapon: boolean;
+  emoji: string;
+  // Who originally had this item (before swaps)
+  originalOwnerId: string;
+}
+
+// Record of an item swap
+export interface ItemSwap {
+  fromCharacterId: string;
+  toCharacterId: string;
+  itemId: string;
+  reason: string; // "accidental" or "intentional" with explanation
+}
+
 export interface CharacterState {
   suspect: Suspect;
   
@@ -40,12 +60,8 @@ export interface CharacterState {
     witness?: string;
   };
   
-  // Item on their person
-  item: {
-    name: string;
-    description: string;
-    isMurderWeapon: boolean;
-  };
+  // Item currently on their person
+  item: CharacterItem;
   
   // Their motive (everyone has some grievance, killer's is strongest)
   motive: {
@@ -74,6 +90,7 @@ export interface CrimeDetails {
   timeOfDeath: string;
   location: string;
   murderWeapon: string;
+  murderWeaponId: string;
   killerMotive: string;
   howItHappened: string;
 }
@@ -85,6 +102,8 @@ export interface DailyCase {
   characters: CharacterState[];
   crimeDetails: CrimeDetails;
   murdererId: string;
+  // Track item swaps that occurred before the crime
+  itemSwaps: ItemSwap[];
 }
 
 export interface GameState {
@@ -97,6 +116,8 @@ export interface GameState {
   }[];
   // Track what secrets have been learned
   learnedSecrets: { aboutId: string; secret: string; fromId: string }[];
+  // Track which characters' items have been revealed
+  revealedItems: string[]; // Character IDs whose items are known
   hasAccused: boolean;
   accusedId: string | null;
   wasCorrect: boolean | null;

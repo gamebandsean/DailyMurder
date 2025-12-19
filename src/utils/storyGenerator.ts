@@ -1,45 +1,30 @@
-import { DailyCase, CharacterState, VictimInfo, CrimeDetails, RelationshipDetail, Opinion, Suspicion } from '../types';
+import { DailyCase, CharacterState, VictimInfo, CrimeDetails, RelationshipDetail, Opinion, Suspicion, CharacterItem, ItemSwap } from '../types';
 import { ALL_SUSPECTS, seededRandom, shuffleArray, getTodaySeed } from '../data/suspects';
+import { SHARP_ITEMS, OTHER_ITEMS, Item } from '../data/items';
 
 // ============ STORY TEMPLATES ============
 
 const VICTIM_TEMPLATES = [
   {
     name: 'Theodore Blackwood',
-    description: 'A wealthy industrialist found dead in his study',
+    description: 'A wealthy industrialist found stabbed in his study',
     background: 'Theodore made his fortune through ruthless tactics, stepping on anyone in his way.',
   },
   {
     name: 'Margaret Holloway', 
-    description: 'A socialite discovered lifeless in the garden',
+    description: 'A socialite discovered stabbed in the garden',
     background: 'Margaret collected secrets about everyone and wasn\'t afraid to use them.',
   },
   {
     name: 'Dr. Richard Crane',
-    description: 'A renowned physician found collapsed in the library',
+    description: 'A renowned physician found stabbed in the library',
     background: 'Dr. Crane had a dark side - unethical experiments and buried scandals.',
   },
   {
     name: 'Eleanor Ashford',
-    description: 'An aging heiress found dead in her bedroom',
+    description: 'An aging heiress found stabbed in her bedroom',
     background: 'Eleanor controlled everyone with her money, threatening to cut them off.',
   },
-];
-
-const MURDER_WEAPONS = [
-  { name: 'antique letter opener', description: 'A sharp brass letter opener with dried blood on the blade' },
-  { name: 'silver candlestick', description: 'A heavy silver candlestick, dented from the fatal blow' },
-  { name: 'silk cord', description: 'An elegant silk cord, the murder weapon used for strangulation' },
-  { name: 'poison vial', description: 'A small vial that once contained deadly poison' },
-];
-
-const INNOCENT_ITEMS = [
-  { name: 'pocket watch', description: 'An antique gold pocket watch' },
-  { name: 'reading glasses', description: 'Wire-rimmed reading glasses' },
-  { name: 'cigarette case', description: 'A silver cigarette case' },
-  { name: 'handkerchief', description: 'A monogrammed silk handkerchief' },
-  { name: 'notebook', description: 'A small leather notebook' },
-  { name: 'fountain pen', description: 'An expensive fountain pen' },
 ];
 
 const KILLER_MOTIVES = [
@@ -94,6 +79,22 @@ const DAMNING_ALIBIS = [
   { description: 'I was... in the hallway near the study', placesNearCrime: true },
   { description: 'I stepped out for air near the victim\'s room', placesNearCrime: true },
   { description: 'I was looking for the victim to discuss something', placesNearCrime: true },
+];
+
+// ============ ITEM SWAP REASONS ============
+
+const ACCIDENTAL_SWAP_REASONS = [
+  'picked up the wrong item in the commotion',
+  'accidentally swapped when bumping into each other',
+  'took it by mistake from the coat room',
+  'grabbed the wrong one in the dark hallway',
+];
+
+const INTENTIONAL_SWAP_REASONS = [
+  'borrowed it earlier and never returned it',
+  'took it to examine it more closely',
+  'was asked to hold onto it temporarily',
+  'confiscated it during an argument',
 ];
 
 // ============ HELPER FUNCTIONS ============
@@ -159,13 +160,92 @@ export function generateDailyCase(seed?: number): DailyCase {
   const murdererId = selectedSuspects[killerIndex].id;
   
   // Crime details
-  const murderWeapon = pickRandom(MURDER_WEAPONS, random);
   const crimeLocation = pickRandom(LOCATIONS, random);
   const crimeTime = pickRandom(TIMES, random);
   const killerMotive = pickRandom(KILLER_MOTIVES, random);
   
-  // Shuffle items for non-killers
-  const shuffledItems = shuffleArray([...INNOCENT_ITEMS], random);
+  // ============ ASSIGN ITEMS ============
+  // Pick murder weapon (must be sharp for stabbing)
+  const shuffledSharpItems = shuffleArray([...SHARP_ITEMS], random);
+  const murderWeapon = shuffledSharpItems[0];
+  const secondSharpItem = shuffledSharpItems[1];
+  
+  // Pick non-sharp items for the other characters
+  const shuffledOtherItems = shuffleArray([...OTHER_ITEMS], random);
+  
+  // Assign items to characters BEFORE swaps
+  // Killer gets the murder weapon, one other person gets a sharp item, rest get non-sharp
+  const originalItems: Map<string, CharacterItem> = new Map();
+  
+  selectedSuspects.forEach((suspect, index) => {
+    let item: Item;
+    let isMurderWeapon = false;
+    
+    if (index === killerIndex) {
+      // Killer gets the murder weapon
+      item = murderWeapon;
+      isMurderWeapon = true;
+    } else if (index === 1) {
+      // One other person gets a sharp item (red herring)
+      item = secondSharpItem;
+    } else {
+      // Rest get non-sharp items
+      item = shuffledOtherItems[index - 2] || shuffledOtherItems[0];
+    }
+    
+    originalItems.set(suspect.id, {
+      id: item.id,
+      name: item.name,
+      description: item.description,
+      isSharp: item.isSharp,
+      isMurderWeapon,
+      emoji: item.emoji,
+      originalOwnerId: suspect.id,
+    });
+  });
+  
+  // ============ ITEM SWAPS ============
+  // Perform 1-2 random swaps before the crime
+  const itemSwaps: ItemSwap[] = [];
+  const currentItems: Map<string, CharacterItem> = new Map(originalItems);
+  
+  const numSwaps = random() < 0.5 ? 1 : 2;
+  
+  for (let i = 0; i < numSwaps; i++) {
+    // Pick two different characters to swap
+    const shuffledForSwap = shuffleArray([...selectedSuspects], random);
+    const char1 = shuffledForSwap[0];
+    const char2 = shuffledForSwap[1];
+    
+    const item1 = currentItems.get(char1.id)!;
+    const item2 = currentItems.get(char2.id)!;
+    
+    // Swap items
+    currentItems.set(char1.id, { ...item2, originalOwnerId: item2.originalOwnerId });
+    currentItems.set(char2.id, { ...item1, originalOwnerId: item1.originalOwnerId });
+    
+    // Record the swap
+    const isAccidental = random() < 0.6;
+    const reason = isAccidental 
+      ? pickRandom(ACCIDENTAL_SWAP_REASONS, random)
+      : pickRandom(INTENTIONAL_SWAP_REASONS, random);
+    
+    itemSwaps.push({
+      fromCharacterId: char1.id,
+      toCharacterId: char2.id,
+      itemId: item1.id,
+      reason: `${char2.suspect.name} ${reason}`,
+    });
+    
+    itemSwaps.push({
+      fromCharacterId: char2.id,
+      toCharacterId: char1.id,
+      itemId: item2.id,
+      reason: `${char1.suspect.name} ${reason}`,
+    });
+  }
+  
+  // Shuffle minor grievances
   const shuffledGrievances = shuffleArray([...MINOR_GRIEVANCES], random);
   
   // Build victim relationships with each suspect
@@ -283,10 +363,8 @@ export function generateDailyCase(seed?: number): DailyCase {
       };
     }
     
-    // Item
-    const item = isKiller
-      ? { name: murderWeapon.name, description: murderWeapon.description, isMurderWeapon: true }
-      : { name: shuffledItems[index % shuffledItems.length].name, description: shuffledItems[index % shuffledItems.length].description, isMurderWeapon: false };
+    // Get current item (after swaps)
+    const item = currentItems.get(suspect.id)!;
     
     // Motive
     const motive = isKiller
@@ -314,6 +392,7 @@ export function generateDailyCase(seed?: number): DailyCase {
     timeOfDeath: crimeTime,
     location: crimeLocation,
     murderWeapon: murderWeapon.name,
+    murderWeaponId: murderWeapon.id,
     killerMotive,
     howItHappened: `${killer.name} confronted ${victim.name} in ${crimeLocation} at ${crimeTime}. ${killerMotive}. Using the ${murderWeapon.name}, they committed the murder and attempted to cover their tracks.`,
   };
@@ -330,5 +409,6 @@ export function generateDailyCase(seed?: number): DailyCase {
     characters,
     crimeDetails,
     murdererId,
+    itemSwaps,
   };
 }

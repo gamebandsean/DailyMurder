@@ -44,6 +44,11 @@ export default function GameScreen({ onNavigateToAccusation }: Props) {
     setIsInterrogating(false);
   };
 
+  // Check if an item has been revealed for a character
+  const isItemRevealed = (characterId: string) => {
+    return gameState.revealedItems.includes(characterId);
+  };
+
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
@@ -73,25 +78,45 @@ export default function GameScreen({ onNavigateToAccusation }: Props) {
       <View style={styles.suspectsSection}>
         <Text style={styles.suspectsLabel}>SUSPECTS • TAP TO INTERROGATE</Text>
         <View style={styles.suspectsGrid}>
-          {currentCase.characters.map((character) => (
-            <TouchableOpacity
-              key={character.suspect.id}
-              style={styles.suspectCard}
-              onPress={() => handleSuspectPress(character)}
-              activeOpacity={0.8}
-            >
-              <Image
-                source={character.suspect.image}
-                style={styles.suspectImage}
-                resizeMode="cover"
-              />
-              <View style={styles.suspectInfo}>
-                <Text style={styles.suspectName} numberOfLines={1}>
-                  {character.suspect.name.split(' ')[0]}
-                </Text>
-              </View>
-            </TouchableOpacity>
-          ))}
+          {currentCase.characters.map((character) => {
+            const itemRevealed = isItemRevealed(character.suspect.id);
+            
+            return (
+              <TouchableOpacity
+                key={character.suspect.id}
+                style={styles.suspectCard}
+                onPress={() => handleSuspectPress(character)}
+                activeOpacity={0.8}
+              >
+                <Image
+                  source={character.suspect.image}
+                  style={styles.suspectImage}
+                  resizeMode="cover"
+                />
+                <View style={styles.suspectInfo}>
+                  <Text style={styles.suspectName} numberOfLines={1}>
+                    {character.suspect.name.split(' ')[0]}
+                  </Text>
+                </View>
+                {/* Item Slot */}
+                <View style={[
+                  styles.itemSlot,
+                  itemRevealed && styles.itemSlotRevealed
+                ]}>
+                  {itemRevealed ? (
+                    <>
+                      <Text style={styles.itemEmoji}>{character.item.emoji}</Text>
+                      <Text style={styles.itemName} numberOfLines={1}>
+                        {character.item.name}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text style={styles.itemUnknown}>?</Text>
+                  )}
+                </View>
+              </TouchableOpacity>
+            );
+          })}
         </View>
       </View>
 
@@ -184,7 +209,7 @@ const styles = StyleSheet.create({
   suspectsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 16,
+    gap: 12,
   },
   suspectCard: {
     flex: 1,
@@ -196,18 +221,47 @@ const styles = StyleSheet.create({
   },
   suspectImage: {
     width: '100%',
-    height: 140,
+    height: 120,
     backgroundColor: '#4A3228',
   },
   suspectInfo: {
-    padding: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
     alignItems: 'center',
     backgroundColor: '#1A0F0A',
   },
   suspectName: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#D4A574',
     fontWeight: '600',
+  },
+  itemSlot: {
+    backgroundColor: '#251510',
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+    borderTopWidth: 1,
+    borderTopColor: '#3D2617',
+    minHeight: 50,
+    justifyContent: 'center',
+  },
+  itemSlotRevealed: {
+    backgroundColor: '#2D1A12',
+  },
+  itemUnknown: {
+    fontSize: 28,
+    color: '#5A4030',
+    fontWeight: '700',
+  },
+  itemEmoji: {
+    fontSize: 22,
+    marginBottom: 2,
+  },
+  itemName: {
+    fontSize: 10,
+    color: '#8B7355',
+    textAlign: 'center',
+    fontWeight: '500',
   },
   arrestButton: {
     backgroundColor: '#8B2323',
