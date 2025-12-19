@@ -66,35 +66,40 @@ export default function ResultScreen({ onPlayAgain }: Props) {
           <View style={styles.detailsCard}>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Time</Text>
-              <Text style={styles.detailValue}>{currentCase.murderDetails.timeOfDeath}</Text>
+              <Text style={styles.detailValue}>{currentCase.crimeDetails.timeOfDeath}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Location</Text>
+              <Text style={styles.detailValue}>{currentCase.crimeDetails.location}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Weapon</Text>
-              <Text style={styles.detailValue}>{currentCase.murderDetails.weapon}</Text>
+              <Text style={styles.detailValue}>{currentCase.crimeDetails.murderWeapon}</Text>
             </View>
             <View style={styles.detailRow}>
               <Text style={styles.detailLabel}>Motive</Text>
-              <Text style={styles.detailValue}>{currentCase.murderDetails.motive}</Text>
+              <Text style={styles.detailValue}>{currentCase.crimeDetails.killerMotive}</Text>
             </View>
           </View>
-          <Text style={styles.storyText}>{currentCase.murderDetails.howItHappened}</Text>
+          <Text style={styles.storyText}>{currentCase.crimeDetails.howItHappened}</Text>
         </View>
 
         {/* How to Solve */}
-        {currentCase.murderDetails.keyEvidence && (
-          <View style={styles.evidenceSection}>
-            <Text style={styles.sectionLabel}>HOW TO CATCH THEM</Text>
-            <Text style={styles.evidenceItem}>
-              🔍 {currentCase.murderDetails.keyEvidence.alibiContradiction}
-            </Text>
-            <Text style={styles.evidenceItem}>
-              👁️ {currentCase.murderDetails.keyEvidence.alibiWitness} could confirm the lie.
-            </Text>
-            <Text style={styles.evidenceItem}>
-              🔪 The killer had the {currentCase.murderDetails.keyEvidence.murderWeapon}.
-            </Text>
-          </View>
-        )}
+        <View style={styles.evidenceSection}>
+          <Text style={styles.sectionLabel}>HOW TO CATCH THE KILLER</Text>
+          <Text style={styles.evidenceItem}>
+            🔍 The killer's alibi places them near the crime scene
+          </Text>
+          <Text style={styles.evidenceItem}>
+            🔪 The killer has the {currentCase.crimeDetails.murderWeapon} on them
+          </Text>
+          <Text style={styles.evidenceItem}>
+            💭 The killer's motive: {currentCase.crimeDetails.killerMotive}
+          </Text>
+          <Text style={styles.evidenceItem}>
+            🗣️ Get others to share secrets, then confront the killer with evidence
+          </Text>
+        </View>
       </ScrollView>
 
       {/* Play Again */}

@@ -56,8 +56,8 @@ export default function GameScreen({ onNavigateToAccusation }: Props) {
 
       {/* Victim Info */}
       <View style={styles.victimInfo}>
-        <Text style={styles.victimLabel}>VICTIM: {currentCase.victimName}</Text>
-        <Text style={styles.victimDescription}>{currentCase.victimDescription}</Text>
+        <Text style={styles.victimLabel}>VICTIM: {currentCase.victim.name}</Text>
+        <Text style={styles.victimDescription}>{currentCase.victim.description}</Text>
       </View>
 
       {/* Crime Scene - Body */}

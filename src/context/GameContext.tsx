@@ -16,6 +16,7 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 const initialGameState: GameState = {
   currentCase: null,
   interrogationHistory: [],
+  learnedSecrets: [],
   hasAccused: false,
   accusedId: null,
   wasCorrect: null,
@@ -41,28 +42,48 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     if (!character) return "Character not found.";
     
-    const answer = generateResponse(
+    const { response, revealedSecret } = generateResponse(
       question,
       character,
       gameState.currentCase.characters,
-      gameState.currentCase
+      gameState.currentCase,
+      gameState.learnedSecrets
     );
     
-    // Add to history
-    setGameState(prev => ({
-      ...prev,
-      interrogationHistory: [
-        ...prev.interrogationHistory,
-        {
-          characterId,
-          question,
-          answer,
-          timestamp: Date.now(),
-        },
-      ],
-    }));
+    // Update state with new info
+    setGameState(prev => {
+      const newLearnedSecrets = [...prev.learnedSecrets];
+      
+      // If a secret was revealed, track it
+      if (revealedSecret) {
+        const alreadyKnown = newLearnedSecrets.some(
+          s => s.aboutId === revealedSecret.aboutId && s.secret === revealedSecret.secret
+        );
+        if (!alreadyKnown) {
+          newLearnedSecrets.push({
+            aboutId: revealedSecret.aboutId,
+            secret: revealedSecret.secret,
+            fromId: characterId,
+          });
+        }
+      }
+      
+      return {
+        ...prev,
+        learnedSecrets: newLearnedSecrets,
+        interrogationHistory: [
+          ...prev.interrogationHistory,
+          {
+            characterId,
+            question,
+            answer: response,
+            timestamp: Date.now(),
+          },
+        ],
+      };
+    });
     
-    return answer;
+    return response;
   };
 
   const makeAccusation = (suspectId: string): boolean => {
@@ -81,7 +102,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
   };
 
   const resetGame = () => {
-    initializeGame();
+    // Generate a new random case (not daily-seeded for replay)
+    const randomSeed = Date.now();
+    const newCase = generateDailyCase(randomSeed);
+    setGameState({
+      ...initialGameState,
+      currentCase: newCase,
+    });
   };
 
   useEffect(() => {
@@ -110,5 +137,3 @@ export function useGame() {
   }
   return context;
 }
-
-
