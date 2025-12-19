@@ -59,10 +59,15 @@ export default function GameScreen({ onNavigateToAccusation }: Props) {
         <Text style={styles.subtitle}>Case #{currentCase.caseNumber}</Text>
       </View>
 
-      {/* Victim Info */}
-      <View style={styles.victimInfo}>
+      {/* Crime Report */}
+      <View style={styles.crimeReport}>
         <Text style={styles.victimLabel}>VICTIM: {currentCase.victim.name}</Text>
-        <Text style={styles.victimDescription}>{currentCase.victim.description}</Text>
+        <Text style={styles.crimeDetails}>
+          Found stabbed in {currentCase.crimeDetails.location} at {currentCase.crimeDetails.timeOfDeath}
+        </Text>
+        <Text style={styles.weaponInfo}>
+          Murder weapon: {currentCase.crimeDetails.murderWeapon}
+        </Text>
       </View>
 
       {/* Crime Scene - Body */}
@@ -171,9 +176,15 @@ const styles = StyleSheet.create({
     marginTop: 6,
     letterSpacing: 2,
   },
-  victimInfo: {
+  crimeReport: {
     alignItems: 'center',
-    marginBottom: 75,
+    marginBottom: 20,
+    backgroundColor: '#1A0F0A',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#3D2617',
   },
   victimLabel: {
     fontSize: 18,
@@ -181,8 +192,14 @@ const styles = StyleSheet.create({
     color: '#E8DDD4',
     letterSpacing: 2,
   },
-  victimDescription: {
+  crimeDetails: {
     fontSize: 14,
+    color: '#D4A574',
+    marginTop: 6,
+    textAlign: 'center',
+  },
+  weaponInfo: {
+    fontSize: 13,
     color: '#8B7355',
     fontStyle: 'italic',
     marginTop: 4,
@@ -196,7 +213,7 @@ const styles = StyleSheet.create({
     height: 220,
   },
   suspectsSection: {
-    marginTop: 75,
+    marginTop: 20,
   },
   suspectsLabel: {
     fontSize: 14,
