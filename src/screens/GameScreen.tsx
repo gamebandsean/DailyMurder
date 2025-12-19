@@ -117,7 +117,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#2C1810',
-    padding: 40,
+    paddingHorizontal: 40,
+    paddingTop: 25,
+    paddingBottom: 25,
   },
   loadingContainer: {
     flex: 1,
@@ -146,7 +148,7 @@ const styles = StyleSheet.create({
   },
   victimInfo: {
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 41,
   },
   victimLabel: {
     fontSize: 20,
@@ -166,11 +168,11 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
   victimImage: {
-    width: '50%',
-    height: 180,
+    width: '60%',
+    height: 270,
   },
   suspectsSection: {
-    marginTop: 8,
+    marginTop: 33,
   },
   suspectsLabel: {
     fontSize: 14,
@@ -215,7 +217,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: '#A52A2A',
     alignItems: 'center',
-    marginTop: 32,
+    marginTop: 24,
   },
   arrestButtonText: {
     color: '#FFF',
