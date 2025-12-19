@@ -80,10 +80,10 @@ const styles = StyleSheet.create({
     minHeight: '100vh' as any,
   },
   gameFrame: {
-    width: 480,
-    height: 720, // 2:3 aspect ratio
+    width: 960,
+    height: 1440, // 2:3 aspect ratio (2x size)
     backgroundColor: '#2C1810',
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(212, 165, 116, 0.2)' as any,
   },
