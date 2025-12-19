@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   },
   gameFrame: {
     width: 960,
-    height: 1100, // Adjusted to fit content
+    height: 1000, // Adjusted to fit content
     backgroundColor: '#2C1810',
     borderRadius: 16,
     overflow: 'hidden',

@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2C1810',
     paddingHorizontal: 40,
     paddingTop: 25,
-    paddingBottom: 25,
+    paddingBottom: 0,
   },
   loadingContainer: {
     flex: 1,
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
     borderColor: '#A52A2A',
     alignItems: 'center',
     marginTop: 20,
-    marginBottom: 25,
+    marginBottom: 0,
   },
   arrestButtonText: {
     color: '#FFF',
