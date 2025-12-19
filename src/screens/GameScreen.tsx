@@ -5,7 +5,6 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
-  ScrollView,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useGame } from '../context/GameContext';
@@ -49,44 +48,30 @@ export default function GameScreen({ onNavigateToAccusation }: Props) {
     <View style={styles.container}>
       <StatusBar style="light" />
       
-      {/* Left Panel - Crime Scene */}
-      <View style={styles.leftPanel}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>DAILY MURDER</Text>
-          <Text style={styles.subtitle}>Case #{currentCase.caseNumber}</Text>
-        </View>
-
-        {/* Victim Info */}
-        <View style={styles.victimInfo}>
-          <Text style={styles.victimLabel}>VICTIM</Text>
-          <Text style={styles.victimName}>{currentCase.victimName}</Text>
-          <Text style={styles.victimDescription}>{currentCase.victimDescription}</Text>
-        </View>
-
-        {/* Crime Scene Image */}
-        <View style={styles.crimeScene}>
-          <Image
-            source={victimImage}
-            style={styles.victimImage}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Arrest Button */}
-        <TouchableOpacity 
-          style={styles.arrestButton}
-          onPress={onNavigateToAccusation}
-        >
-          <Text style={styles.arrestButtonText}>MAKE AN ARREST</Text>
-        </TouchableOpacity>
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.title}>DAILY MURDER</Text>
+        <Text style={styles.subtitle}>Case #{currentCase.caseNumber}</Text>
       </View>
 
-      {/* Right Panel - Suspects */}
-      <View style={styles.rightPanel}>
-        <Text style={styles.suspectsTitle}>SUSPECTS</Text>
-        <Text style={styles.suspectsHint}>Click to interrogate</Text>
-        
+      {/* Victim Info */}
+      <View style={styles.victimInfo}>
+        <Text style={styles.victimLabel}>VICTIM: {currentCase.victimName}</Text>
+        <Text style={styles.victimDescription}>{currentCase.victimDescription}</Text>
+      </View>
+
+      {/* Crime Scene - Body */}
+      <View style={styles.crimeScene}>
+        <Image
+          source={victimImage}
+          style={styles.victimImage}
+          resizeMode="contain"
+        />
+      </View>
+
+      {/* Suspects */}
+      <View style={styles.suspectsSection}>
+        <Text style={styles.suspectsLabel}>SUSPECTS • TAP TO INTERROGATE</Text>
         <View style={styles.suspectsGrid}>
           {currentCase.characters.map((character) => (
             <TouchableOpacity
@@ -101,13 +86,22 @@ export default function GameScreen({ onNavigateToAccusation }: Props) {
                 resizeMode="cover"
               />
               <View style={styles.suspectInfo}>
-                <Text style={styles.suspectName}>{character.suspect.name}</Text>
-                <Text style={styles.suspectOccupation}>{character.suspect.occupation}</Text>
+                <Text style={styles.suspectName} numberOfLines={1}>
+                  {character.suspect.name.split(' ')[0]}
+                </Text>
               </View>
             </TouchableOpacity>
           ))}
         </View>
       </View>
+
+      {/* Arrest Button */}
+      <TouchableOpacity 
+        style={styles.arrestButton}
+        onPress={onNavigateToAccusation}
+      >
+        <Text style={styles.arrestButtonText}>MAKE AN ARREST</Text>
+      </TouchableOpacity>
 
       {/* Interrogation Modal */}
       <InterrogationModal
@@ -122,8 +116,8 @@ export default function GameScreen({ onNavigateToAccusation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
     backgroundColor: '#2C1810',
+    padding: 20,
   },
   loadingContainer: {
     flex: 1,
@@ -134,57 +128,86 @@ const styles = StyleSheet.create({
     color: '#D4A574',
     fontSize: 18,
   },
-  // Left Panel
-  leftPanel: {
-    flex: 1,
-    padding: 24,
-    borderRightWidth: 1,
-    borderRightColor: '#4A3228',
-  },
   header: {
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 12,
   },
   title: {
-    fontSize: 28,
+    fontSize: 26,
     fontWeight: '800',
     color: '#D4A574',
     letterSpacing: 4,
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#8B7355',
     marginTop: 4,
     letterSpacing: 2,
   },
   victimInfo: {
-    marginBottom: 16,
+    alignItems: 'center',
+    marginBottom: 8,
   },
   victimLabel: {
-    fontSize: 10,
-    color: '#6B5344',
-    letterSpacing: 2,
-    marginBottom: 4,
-  },
-  victimName: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '600',
     color: '#E8DDD4',
+    letterSpacing: 1,
   },
   victimDescription: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#8B7355',
     fontStyle: 'italic',
-    marginTop: 4,
+    marginTop: 2,
   },
   crimeScene: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    minHeight: 180,
   },
   victimImage: {
-    width: '100%',
+    width: '90%',
     height: '100%',
-    maxHeight: 200,
+  },
+  suspectsSection: {
+    marginTop: 12,
+  },
+  suspectsLabel: {
+    fontSize: 10,
+    color: '#8B7355',
+    letterSpacing: 2,
+    marginBottom: 10,
+    textAlign: 'center',
+    fontWeight: '600',
+  },
+  suspectsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  suspectCard: {
+    flex: 1,
+    backgroundColor: '#3D2617',
+    borderRadius: 10,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#4A3228',
+  },
+  suspectImage: {
+    width: '100%',
+    height: 90,
+    backgroundColor: '#4A3228',
+  },
+  suspectInfo: {
+    padding: 8,
+    alignItems: 'center',
+    backgroundColor: '#1A0F0A',
+  },
+  suspectName: {
+    fontSize: 11,
+    color: '#D4A574',
+    fontWeight: '600',
   },
   arrestButton: {
     backgroundColor: '#8B2323',
@@ -200,57 +223,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 2,
-  },
-  // Right Panel
-  rightPanel: {
-    width: '55%',
-    padding: 24,
-    backgroundColor: '#241510',
-  },
-  suspectsTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#D4A574',
-    letterSpacing: 3,
-    marginBottom: 4,
-  },
-  suspectsHint: {
-    fontSize: 11,
-    color: '#6B5344',
-    fontStyle: 'italic',
-    marginBottom: 16,
-  },
-  suspectsGrid: {
-    flex: 1,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  suspectCard: {
-    width: '48%',
-    backgroundColor: '#3D2617',
-    borderRadius: 10,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#4A3228',
-  },
-  suspectImage: {
-    width: '100%',
-    height: 120,
-    backgroundColor: '#4A3228',
-  },
-  suspectInfo: {
-    padding: 10,
-  },
-  suspectName: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#D4A574',
-  },
-  suspectOccupation: {
-    fontSize: 10,
-    color: '#8B7355',
-    marginTop: 2,
   },
 });

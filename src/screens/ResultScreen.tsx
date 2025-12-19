@@ -19,100 +19,88 @@ export default function ResultScreen({ onPlayAgain }: Props) {
 
   if (!gameState.currentCase) return null;
 
-  const { currentCase, wasCorrect, accusedId } = gameState;
-  const accusedCharacter = currentCase.characters.find(c => c.suspect.id === accusedId);
+  const { currentCase, wasCorrect } = gameState;
   const actualMurderer = currentCase.characters.find(c => c.isGuilty);
 
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Left Panel - Result */}
-      <View style={[styles.leftPanel, wasCorrect ? styles.successPanel : styles.failPanel]}>
-        <Text style={styles.resultEmoji}>{wasCorrect ? '🎉' : '💀'}</Text>
-        <Text style={styles.resultTitle}>
-          {wasCorrect ? 'CASE CLOSED' : 'WRONG SUSPECT'}
-        </Text>
-        <Text style={styles.resultSubtitle}>
-          {wasCorrect 
-            ? 'Excellent detective work!'
-            : 'The real killer escaped.'}
-        </Text>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
+        {/* Result Header */}
+        <View style={[styles.resultHeader, wasCorrect ? styles.successHeader : styles.failHeader]}>
+          <Text style={styles.resultEmoji}>{wasCorrect ? '🎉' : '💀'}</Text>
+          <Text style={styles.resultTitle}>
+            {wasCorrect ? 'CASE CLOSED' : 'WRONG SUSPECT'}
+          </Text>
+          <Text style={styles.resultSubtitle}>
+            {wasCorrect 
+              ? 'Excellent detective work!'
+              : 'The real killer escaped justice.'}
+          </Text>
+        </View>
 
         {/* The Killer */}
         {actualMurderer && (
-          <View style={styles.killerCard}>
-            <Image
-              source={actualMurderer.suspect.image}
-              style={styles.killerImage}
-              resizeMode="cover"
-            />
-            <View style={styles.killerInfo}>
-              <Text style={styles.killerLabel}>
-                {wasCorrect ? 'THE KILLER' : 'THE REAL KILLER'}
-              </Text>
-              <Text style={styles.killerName}>{actualMurderer.suspect.name}</Text>
+          <View style={styles.killerSection}>
+            <Text style={styles.sectionLabel}>
+              {wasCorrect ? 'THE KILLER' : 'THE REAL KILLER WAS'}
+            </Text>
+            <View style={styles.killerCard}>
+              <Image
+                source={actualMurderer.suspect.image}
+                style={styles.killerImage}
+                resizeMode="cover"
+              />
+              <View style={styles.killerInfo}>
+                <Text style={styles.killerName}>{actualMurderer.suspect.name}</Text>
+                <Text style={styles.killerOccupation}>{actualMurderer.suspect.occupation}</Text>
+              </View>
             </View>
           </View>
         )}
 
-        <TouchableOpacity style={styles.playAgainButton} onPress={onPlayAgain}>
-          <Text style={styles.playAgainButtonText}>PLAY AGAIN</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Right Panel - Case Details */}
-      <ScrollView style={styles.rightPanel} contentContainerStyle={styles.rightPanelContent}>
-        <Text style={styles.sectionTitle}>WHAT HAPPENED</Text>
-        
-        <View style={styles.detailsCard}>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Time</Text>
-            <Text style={styles.detailValue}>{currentCase.murderDetails.timeOfDeath}</Text>
+        {/* Case Details */}
+        <View style={styles.detailsSection}>
+          <Text style={styles.sectionLabel}>WHAT HAPPENED</Text>
+          <View style={styles.detailsCard}>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Time</Text>
+              <Text style={styles.detailValue}>{currentCase.murderDetails.timeOfDeath}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Weapon</Text>
+              <Text style={styles.detailValue}>{currentCase.murderDetails.weapon}</Text>
+            </View>
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLabel}>Motive</Text>
+              <Text style={styles.detailValue}>{currentCase.murderDetails.motive}</Text>
+            </View>
           </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Location</Text>
-            <Text style={styles.detailValue}>{currentCase.murderDetails.location}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Weapon</Text>
-            <Text style={styles.detailValue}>{currentCase.murderDetails.weapon}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Motive</Text>
-            <Text style={styles.detailValue}>{currentCase.murderDetails.motive}</Text>
-          </View>
+          <Text style={styles.storyText}>{currentCase.murderDetails.howItHappened}</Text>
         </View>
 
-        <Text style={styles.storyText}>{currentCase.murderDetails.howItHappened}</Text>
-
+        {/* How to Solve */}
         {currentCase.murderDetails.keyEvidence && (
-          <>
-            <Text style={styles.sectionTitle}>HOW TO SOLVE IT</Text>
-            
-            <View style={styles.evidenceCard}>
-              <Text style={styles.evidenceTitle}>🔍 Alibi Contradiction</Text>
-              <Text style={styles.evidenceText}>
-                {currentCase.murderDetails.keyEvidence.alibiContradiction}
-              </Text>
-            </View>
-
-            <View style={styles.evidenceCard}>
-              <Text style={styles.evidenceTitle}>👁️ Key Witness</Text>
-              <Text style={styles.evidenceText}>
-                {currentCase.murderDetails.keyEvidence.alibiWitness} saw the killer and could confirm the lie.
-              </Text>
-            </View>
-
-            <View style={styles.evidenceCard}>
-              <Text style={styles.evidenceTitle}>🔪 Murder Weapon</Text>
-              <Text style={styles.evidenceText}>
-                The killer had the {currentCase.murderDetails.keyEvidence.murderWeapon} on them.
-              </Text>
-            </View>
-          </>
+          <View style={styles.evidenceSection}>
+            <Text style={styles.sectionLabel}>HOW TO CATCH THEM</Text>
+            <Text style={styles.evidenceItem}>
+              🔍 {currentCase.murderDetails.keyEvidence.alibiContradiction}
+            </Text>
+            <Text style={styles.evidenceItem}>
+              👁️ {currentCase.murderDetails.keyEvidence.alibiWitness} could confirm the lie.
+            </Text>
+            <Text style={styles.evidenceItem}>
+              🔪 The killer had the {currentCase.murderDetails.keyEvidence.murderWeapon}.
+            </Text>
+          </View>
         )}
       </ScrollView>
+
+      {/* Play Again */}
+      <TouchableOpacity style={styles.playAgainButton} onPress={onPlayAgain}>
+        <Text style={styles.playAgainButtonText}>PLAY AGAIN</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -120,39 +108,50 @@ export default function ResultScreen({ onPlayAgain }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
     backgroundColor: '#2C1810',
   },
-  // Left Panel
-  leftPanel: {
+  scrollView: {
     flex: 1,
-    padding: 24,
-    justifyContent: 'center',
+  },
+  scrollContent: {
+    padding: 20,
+  },
+  resultHeader: {
     alignItems: 'center',
-    borderRightWidth: 1,
-    borderRightColor: '#4A3228',
+    paddingVertical: 20,
+    borderRadius: 10,
+    marginBottom: 20,
   },
-  successPanel: {
-    backgroundColor: 'rgba(39, 100, 39, 0.2)',
+  successHeader: {
+    backgroundColor: 'rgba(39, 100, 39, 0.3)',
   },
-  failPanel: {
-    backgroundColor: 'rgba(139, 35, 35, 0.2)',
+  failHeader: {
+    backgroundColor: 'rgba(139, 35, 35, 0.3)',
   },
   resultEmoji: {
-    fontSize: 48,
-    marginBottom: 12,
+    fontSize: 40,
+    marginBottom: 8,
   },
   resultTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     color: '#D4A574',
     letterSpacing: 3,
   },
   resultSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#E8DDD4',
-    marginTop: 8,
-    marginBottom: 24,
+    marginTop: 6,
+  },
+  killerSection: {
+    marginBottom: 20,
+  },
+  sectionLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#8B7355',
+    letterSpacing: 2,
+    marginBottom: 10,
   },
   killerCard: {
     flexDirection: 'row',
@@ -161,61 +160,34 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 2,
     borderColor: '#8B2323',
-    marginBottom: 24,
   },
   killerImage: {
     width: 80,
     height: 80,
   },
   killerInfo: {
+    flex: 1,
     padding: 12,
     justifyContent: 'center',
-  },
-  killerLabel: {
-    fontSize: 10,
-    color: '#8B2323',
-    letterSpacing: 1,
-    fontWeight: '700',
   },
   killerName: {
     fontSize: 16,
     fontWeight: '700',
     color: '#D4A574',
-    marginTop: 4,
   },
-  playAgainButton: {
-    backgroundColor: '#4A3228',
-    paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
-  },
-  playAgainButtonText: {
-    color: '#D4A574',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  // Right Panel
-  rightPanel: {
-    width: '55%',
-    backgroundColor: '#241510',
-  },
-  rightPanelContent: {
-    padding: 24,
-  },
-  sectionTitle: {
+  killerOccupation: {
     fontSize: 11,
-    fontWeight: '700',
     color: '#8B7355',
-    letterSpacing: 2,
-    marginBottom: 12,
-    marginTop: 8,
+    marginTop: 2,
+  },
+  detailsSection: {
+    marginBottom: 20,
   },
   detailsCard: {
     backgroundColor: '#3D2617',
     borderRadius: 8,
     padding: 12,
-    marginBottom: 16,
+    marginBottom: 10,
   },
   detailRow: {
     flexDirection: 'row',
@@ -238,23 +210,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#A89585',
     lineHeight: 18,
-    marginBottom: 16,
   },
-  evidenceCard: {
-    backgroundColor: '#3D2617',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 10,
+  evidenceSection: {
+    marginBottom: 20,
   },
-  evidenceTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#D4A574',
-    marginBottom: 4,
-  },
-  evidenceText: {
+  evidenceItem: {
     fontSize: 11,
     color: '#A89585',
-    lineHeight: 16,
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  playAgainButton: {
+    backgroundColor: '#4A3228',
+    paddingVertical: 14,
+    margin: 20,
+    marginTop: 0,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  playAgainButtonText: {
+    color: '#D4A574',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
 });

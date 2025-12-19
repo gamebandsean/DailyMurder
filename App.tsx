@@ -80,8 +80,8 @@ const styles = StyleSheet.create({
     minHeight: '100vh' as any,
   },
   gameFrame: {
-    width: 960,
-    height: 540, // 16:9 aspect ratio (960/16*9 = 540)
+    width: 480,
+    height: 720, // 2:3 aspect ratio
     backgroundColor: '#2C1810',
     borderRadius: 12,
     overflow: 'hidden',

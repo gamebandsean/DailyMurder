@@ -5,6 +5,7 @@ import {
   Image,
   StyleSheet,
   TouchableOpacity,
+  ScrollView,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useGame } from '../context/GameContext';
@@ -39,57 +40,23 @@ export default function AccusationScreen({ onBack, onAccuse }: Props) {
     <View style={styles.container}>
       <StatusBar style="light" />
 
-      {/* Left Panel - Instructions */}
-      <View style={styles.leftPanel}>
+      {/* Header */}
+      <View style={styles.header}>
         <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <Text style={styles.backButtonText}>← BACK</Text>
         </TouchableOpacity>
-
         <Text style={styles.title}>MAKE AN ARREST</Text>
-        
-        <View style={styles.warningBox}>
-          <Text style={styles.warningIcon}>⚠️</Text>
-          <Text style={styles.warningText}>
-            Choose carefully, Detective. Once you make an arrest, the case will be closed.
-            An innocent person behind bars means the real killer goes free.
-          </Text>
-        </View>
-
-        {selectedSuspect && (
-          <View style={styles.selectedInfo}>
-            <Text style={styles.selectedLabel}>SELECTED</Text>
-            <Text style={styles.selectedName}>{selectedCharacter?.suspect.name}</Text>
-            
-            {confirmMode ? (
-              <View style={styles.confirmContainer}>
-                <Text style={styles.confirmText}>
-                  Are you sure you want to arrest this suspect?
-                </Text>
-                <View style={styles.confirmButtons}>
-                  <TouchableOpacity 
-                    style={styles.cancelButton} 
-                    onPress={() => setConfirmMode(false)}
-                  >
-                    <Text style={styles.cancelButtonText}>CANCEL</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={styles.confirmButton} onPress={handleAccuse}>
-                    <Text style={styles.confirmButtonText}>CONFIRM</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ) : (
-              <TouchableOpacity style={styles.arrestButton} onPress={handleAccuse}>
-                <Text style={styles.arrestButtonText}>ARREST</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
       </View>
 
-      {/* Right Panel - Suspect Grid */}
-      <View style={styles.rightPanel}>
-        <Text style={styles.suspectsTitle}>SELECT A SUSPECT</Text>
-        
+      {/* Warning */}
+      <View style={styles.warningBox}>
+        <Text style={styles.warningText}>
+          ⚠️ Choose carefully. Once you arrest someone, the case is closed.
+        </Text>
+      </View>
+
+      {/* Suspects Grid */}
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.suspectsGrid}>
           {gameState.currentCase.characters.map((character) => (
             <TouchableOpacity
@@ -121,6 +88,38 @@ export default function AccusationScreen({ onBack, onAccuse }: Props) {
             </TouchableOpacity>
           ))}
         </View>
+      </ScrollView>
+
+      {/* Action Area */}
+      <View style={styles.actionArea}>
+        {selectedSuspect ? (
+          confirmMode ? (
+            <View style={styles.confirmContainer}>
+              <Text style={styles.confirmText}>
+                Arrest {selectedCharacter?.suspect.name}?
+              </Text>
+              <View style={styles.confirmButtons}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => setConfirmMode(false)}
+                >
+                  <Text style={styles.cancelButtonText}>CANCEL</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.confirmButton} onPress={handleAccuse}>
+                  <Text style={styles.confirmButtonText}>CONFIRM</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          ) : (
+            <TouchableOpacity style={styles.arrestButton} onPress={handleAccuse}>
+              <Text style={styles.arrestButtonText}>
+                ARREST {selectedCharacter?.suspect.name.split(' ')[0].toUpperCase()}
+              </Text>
+            </TouchableOpacity>
+          )
+        ) : (
+          <Text style={styles.hintText}>Select a suspect to arrest</Text>
+        )}
       </View>
     </View>
   );
@@ -129,127 +128,47 @@ export default function AccusationScreen({ onBack, onAccuse }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    flexDirection: 'row',
     backgroundColor: '#2C1810',
+    padding: 20,
   },
-  // Left Panel
-  leftPanel: {
-    flex: 1,
-    padding: 24,
-    borderRightWidth: 1,
-    borderRightColor: '#4A3228',
+  header: {
+    marginBottom: 12,
   },
   backButton: {
-    marginBottom: 16,
+    marginBottom: 8,
   },
   backButtonText: {
     color: '#D4A574',
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '600',
     letterSpacing: 1,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: '800',
     color: '#D4A574',
     letterSpacing: 3,
-    marginBottom: 20,
   },
   warningBox: {
     backgroundColor: 'rgba(139, 35, 35, 0.3)',
-    padding: 16,
-    borderRadius: 10,
+    padding: 12,
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#8B2323',
-  },
-  warningIcon: {
-    fontSize: 20,
-    marginBottom: 8,
+    marginBottom: 16,
   },
   warningText: {
     color: '#E8DDD4',
-    fontSize: 13,
-    lineHeight: 20,
+    fontSize: 12,
+    textAlign: 'center',
   },
-  selectedInfo: {
-    marginTop: 24,
-    padding: 16,
-    backgroundColor: '#3D2617',
-    borderRadius: 10,
-  },
-  selectedLabel: {
-    fontSize: 10,
-    color: '#8B7355',
-    letterSpacing: 2,
-  },
-  selectedName: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#D4A574',
-    marginTop: 4,
-    marginBottom: 16,
-  },
-  arrestButton: {
-    backgroundColor: '#8B2323',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  arrestButtonText: {
-    color: '#FFF',
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 2,
-  },
-  confirmContainer: {},
-  confirmText: {
-    color: '#E8DDD4',
-    fontSize: 13,
-    marginBottom: 12,
-  },
-  confirmButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  cancelButton: {
+  scrollView: {
     flex: 1,
-    backgroundColor: '#4A3228',
-    paddingVertical: 10,
-    borderRadius: 6,
-    alignItems: 'center',
   },
-  cancelButtonText: {
-    color: '#D4A574',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  confirmButton: {
-    flex: 1,
-    backgroundColor: '#8B2323',
-    paddingVertical: 10,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  confirmButtonText: {
-    color: '#FFF',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  // Right Panel
-  rightPanel: {
-    width: '55%',
-    padding: 24,
-    backgroundColor: '#241510',
-  },
-  suspectsTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: '#8B7355',
-    letterSpacing: 2,
-    marginBottom: 16,
+  scrollContent: {
+    paddingBottom: 10,
   },
   suspectsGrid: {
-    flex: 1,
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
@@ -269,14 +188,14 @@ const styles = StyleSheet.create({
   },
   suspectImage: {
     width: '100%',
-    height: 100,
+    height: 110,
     backgroundColor: '#4A3228',
   },
   suspectInfo: {
     padding: 10,
   },
   suspectName: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '700',
     color: '#D4A574',
   },
@@ -289,9 +208,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 8,
     right: 8,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: 26,
+    height: 26,
+    borderRadius: 13,
     backgroundColor: '#8B2323',
     justifyContent: 'center',
     alignItems: 'center',
@@ -299,6 +218,65 @@ const styles = StyleSheet.create({
   selectedBadgeText: {
     color: '#FFF',
     fontSize: 14,
+    fontWeight: '700',
+  },
+  actionArea: {
+    paddingTop: 16,
+  },
+  arrestButton: {
+    backgroundColor: '#8B2323',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  arrestButtonText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 2,
+  },
+  hintText: {
+    color: '#6B5344',
+    fontSize: 13,
+    fontStyle: 'italic',
+    textAlign: 'center',
+    paddingVertical: 14,
+  },
+  confirmContainer: {
+    alignItems: 'center',
+  },
+  confirmText: {
+    color: '#E8DDD4',
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  cancelButton: {
+    flex: 1,
+    backgroundColor: '#4A3228',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButtonText: {
+    color: '#D4A574',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  confirmButton: {
+    flex: 1,
+    backgroundColor: '#8B2323',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    color: '#FFF',
+    fontSize: 13,
     fontWeight: '700',
   },
 });
