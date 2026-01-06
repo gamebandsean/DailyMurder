@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, Platform } from 'react-native';
 import { GameProvider, useGame } from './src/context/GameContext';
-import GameScreen from './src/screens/GameScreen';
+import GameScreen3D from './src/screens/GameScreen3D';
 import AccusationScreen from './src/screens/AccusationScreen';
 import ResultScreen from './src/screens/ResultScreen';
 
@@ -36,13 +36,13 @@ function GameNavigator() {
 
   switch (currentScreen) {
     case 'game':
-      return <GameScreen onNavigateToAccusation={handleNavigateToAccusation} />;
+      return <GameScreen3D onNavigateToAccusation={handleNavigateToAccusation} />;
     case 'accusation':
       return <AccusationScreen onBack={handleBackToGame} onAccuse={handleAccuse} />;
     case 'result':
       return <ResultScreen onPlayAgain={handlePlayAgain} />;
     default:
-      return <GameScreen onNavigateToAccusation={handleNavigateToAccusation} />;
+      return <GameScreen3D onNavigateToAccusation={handleNavigateToAccusation} />;
   }
 }
 
@@ -81,8 +81,8 @@ const styles = StyleSheet.create({
   },
   gameFrame: {
     width: 960,
-    height: 875, // Adjusted to fit content
-    backgroundColor: '#2C1810',
+    height: 700, // Adjusted for 3D view
+    backgroundColor: '#0A0505',
     borderRadius: 16,
     overflow: 'hidden',
     boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(212, 165, 116, 0.2)' as any,
