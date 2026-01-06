@@ -10,9 +10,18 @@ interface Character3DProps {
   onClick?: () => void;
   itemEmoji?: string;
   itemRevealed?: boolean;
+  characterIndex?: number; // To determine unique features
 }
 
-// Low-poly stylized character - geometric/angular design - BIGGER version
+// Hair colors for variety
+const HAIR_COLORS = [
+  '#2C1810', // Dark brown
+  '#D4A574', // Blonde
+  '#1A1A1A', // Black
+  '#8B4513', // Auburn/red
+];
+
+// Low-poly stylized character - geometric/angular design with unique features
 export default function Character3D({ 
   position, 
   color, 
@@ -20,7 +29,8 @@ export default function Character3D({
   isSelected = false,
   onClick,
   itemEmoji,
-  itemRevealed = false
+  itemRevealed = false,
+  characterIndex = 0
 }: Character3DProps) {
   const groupRef = useRef<THREE.Group>(null);
   const [hovered, setHovered] = useState(false);
@@ -29,15 +39,21 @@ export default function Character3D({
   useFrame((state) => {
     if (groupRef.current) {
       // Subtle breathing motion
-      groupRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2) * 0.02;
-      // Slight sway
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.05;
+      groupRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 2 + characterIndex) * 0.02;
+      // Slight sway - different phase for each character
+      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5 + characterIndex * 0.5) * 0.05;
     }
   });
 
   const emissiveIntensity = isSelected ? 0.4 : hovered ? 0.25 : 0.05;
   const darkerColor = new THREE.Color(color).offsetHSL(0, 0, -0.15);
-  const scale = 1.1; // Character scale
+  const scale = 1.1;
+  const hairColor = HAIR_COLORS[characterIndex % HAIR_COLORS.length];
+  
+  // Character 2 (index 1) wears a hat (detective/fedora style)
+  const hasHat = characterIndex === 1;
+  // Character 3 (index 2) has a bowler hat
+  const hasBowlerHat = characterIndex === 2;
 
   return (
     <group 
@@ -86,6 +102,83 @@ export default function Character3D({
         />
       </mesh>
       
+      {/* Hair - different styles based on character */}
+      {!hasHat && !hasBowlerHat && (
+        <mesh position={[0, 1.38, -0.02]} castShadow>
+          <boxGeometry args={[0.28, 0.12, 0.26]} />
+          <meshStandardMaterial color={hairColor} roughness={0.9} />
+        </mesh>
+      )}
+      
+      {/* Character 0: Slicked back hair */}
+      {characterIndex === 0 && (
+        <mesh position={[0, 1.42, -0.08]} rotation={[0.3, 0, 0]} castShadow>
+          <boxGeometry args={[0.24, 0.08, 0.18]} />
+          <meshStandardMaterial color={hairColor} roughness={0.8} />
+        </mesh>
+      )}
+      
+      {/* Character 3: Longer wavy hair */}
+      {characterIndex === 3 && (
+        <>
+          <mesh position={[0, 1.38, 0]} castShadow>
+            <boxGeometry args={[0.32, 0.14, 0.3]} />
+            <meshStandardMaterial color={hairColor} roughness={0.9} />
+          </mesh>
+          {/* Side hair */}
+          <mesh position={[-0.18, 1.28, 0]} castShadow>
+            <boxGeometry args={[0.08, 0.2, 0.18]} />
+            <meshStandardMaterial color={hairColor} roughness={0.9} />
+          </mesh>
+          <mesh position={[0.18, 1.28, 0]} castShadow>
+            <boxGeometry args={[0.08, 0.2, 0.18]} />
+            <meshStandardMaterial color={hairColor} roughness={0.9} />
+          </mesh>
+        </>
+      )}
+      
+      {/* Fedora hat for character 1 */}
+      {hasHat && (
+        <>
+          {/* Hat crown */}
+          <mesh position={[0, 1.48, 0]} castShadow>
+            <cylinderGeometry args={[0.16, 0.2, 0.14, 8]} />
+            <meshStandardMaterial color="#2A2520" roughness={0.5} />
+          </mesh>
+          {/* Hat brim */}
+          <mesh position={[0, 1.41, 0]} rotation={[-Math.PI/2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.3, 0.3, 0.025, 8]} />
+            <meshStandardMaterial color="#2A2520" roughness={0.5} />
+          </mesh>
+          {/* Hat band */}
+          <mesh position={[0, 1.43, 0]} castShadow>
+            <cylinderGeometry args={[0.21, 0.21, 0.03, 8]} />
+            <meshStandardMaterial color="#8B0000" roughness={0.6} />
+          </mesh>
+        </>
+      )}
+      
+      {/* Bowler hat for character 2 */}
+      {hasBowlerHat && (
+        <>
+          {/* Hat dome */}
+          <mesh position={[0, 1.48, 0]} castShadow>
+            <sphereGeometry args={[0.16, 8, 6, 0, Math.PI * 2, 0, Math.PI / 2]} />
+            <meshStandardMaterial color="#1A1A1A" roughness={0.4} />
+          </mesh>
+          {/* Hat base */}
+          <mesh position={[0, 1.40, 0]} castShadow>
+            <cylinderGeometry args={[0.16, 0.16, 0.06, 8]} />
+            <meshStandardMaterial color="#1A1A1A" roughness={0.4} />
+          </mesh>
+          {/* Hat brim */}
+          <mesh position={[0, 1.38, 0]} rotation={[-Math.PI/2, 0, 0]} castShadow>
+            <ringGeometry args={[0.15, 0.26, 16]} />
+            <meshStandardMaterial color="#1A1A1A" roughness={0.4} side={THREE.DoubleSide} />
+          </mesh>
+        </>
+      )}
+      
       {/* Eyes - simple dark spots */}
       <mesh position={[-0.06, 1.28, 0.18]}>
         <sphereGeometry args={[0.025, 8, 8]} />
@@ -96,14 +189,14 @@ export default function Character3D({
         <meshBasicMaterial color="#1A1A1A" />
       </mesh>
       
-      {/* Hat - fedora style */}
-      <mesh position={[0, 1.48, 0]} castShadow>
-        <cylinderGeometry args={[0.18, 0.25, 0.12, 8]} />
-        <meshStandardMaterial color={darkerColor} roughness={0.5} />
+      {/* Eyebrows for more expression */}
+      <mesh position={[-0.06, 1.32, 0.19]} rotation={[0, 0, characterIndex === 2 ? 0.2 : -0.1]}>
+        <boxGeometry args={[0.05, 0.012, 0.01]} />
+        <meshBasicMaterial color={hairColor} />
       </mesh>
-      <mesh position={[0, 1.42, 0]} rotation={[-Math.PI/2, 0, 0]} castShadow>
-        <cylinderGeometry args={[0.32, 0.32, 0.03, 8]} />
-        <meshStandardMaterial color={darkerColor} roughness={0.5} />
+      <mesh position={[0.06, 1.32, 0.19]} rotation={[0, 0, characterIndex === 2 ? -0.2 : 0.1]}>
+        <boxGeometry args={[0.05, 0.012, 0.01]} />
+        <meshBasicMaterial color={hairColor} />
       </mesh>
       
       {/* Left Arm */}
@@ -162,7 +255,7 @@ export default function Character3D({
       )}
       
       {/* Floating name plate */}
-      <group position={[0, 1.9, 0]}>
+      <group position={[0, hasHat || hasBowlerHat ? 1.75 : 1.65, 0]}>
         <mesh>
           <planeGeometry args={[0.7, 0.18]} />
           <meshBasicMaterial color="#1A0F0A" transparent opacity={0.85} side={THREE.DoubleSide} />

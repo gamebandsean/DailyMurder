@@ -163,6 +163,31 @@ export default function Scene3D({
         {/* The room environment */}
         <Room3D />
         
+        {/* Dramatic spotlight on the body */}
+        <spotLight
+          position={[0, 5, 0.5]}
+          angle={0.35}
+          penumbra={0.3}
+          intensity={4}
+          color="#FFFAF0"
+          castShadow
+          target-position={[0, 0, 0]}
+          shadow-mapSize-width={1024}
+          shadow-mapSize-height={1024}
+        />
+        
+        {/* Volumetric light cone effect (visible light beam) */}
+        <mesh position={[0, 2.5, 0.25]} rotation={[0.05, 0, 0]}>
+          <coneGeometry args={[1.2, 5, 32, 1, true]} />
+          <meshBasicMaterial 
+            color="#FFFAF0" 
+            transparent 
+            opacity={0.03} 
+            side={THREE.DoubleSide}
+            depthWrite={false}
+          />
+        </mesh>
+        
         {/* The victim's body */}
         <Body3D position={[0, 0, 0]} />
         
@@ -177,6 +202,7 @@ export default function Scene3D({
             onClick={() => onCharacterClick(character)}
             itemEmoji={character.currentItem?.emoji || '❓'}
             itemRevealed={revealedItems.includes(character.suspect.id)}
+            characterIndex={index}
           />
         ))}
       </Suspense>
