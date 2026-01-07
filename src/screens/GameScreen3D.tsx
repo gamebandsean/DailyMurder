@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import Scene3D from '../components/3d/Scene3D';
 import InterrogationModal from '../components/InterrogationModal';
+import CrimeReportScreen from './CrimeReportScreen';
 import { useGame } from '../context/GameContext';
 import { CharacterState } from '../types';
 
@@ -10,7 +11,7 @@ interface Props {
 }
 
 export default function GameScreen3D({ onNavigateToAccusation }: Props) {
-  const { gameState } = useGame();
+  const { gameState, dismissReport, getQuestionsRemaining } = useGame();
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterState | null>(null);
   const [isInterrogating, setIsInterrogating] = useState(false);
 
@@ -23,10 +24,14 @@ export default function GameScreen3D({ onNavigateToAccusation }: Props) {
   }
 
   const currentCase = gameState.currentCase;
+  const hoursRemaining = getQuestionsRemaining();
+  const isTimeUp = hoursRemaining <= 0;
 
   const handleCharacterClick = (character: CharacterState) => {
-    setSelectedCharacter(character);
-    setIsInterrogating(true);
+    if (!isTimeUp) {
+      setSelectedCharacter(character);
+      setIsInterrogating(true);
+    }
   };
 
   const handleCloseInterrogation = () => {
@@ -34,15 +39,41 @@ export default function GameScreen3D({ onNavigateToAccusation }: Props) {
     setSelectedCharacter(null);
   };
 
+  const getCauseOfDeathText = (cause: string): string => {
+    switch (cause) {
+      case 'stabbed': return 'Stabbing';
+      case 'poisoned': return 'Poisoning';
+      case 'strangled': return 'Strangulation';
+      case 'shot': return 'Gunshot';
+      default: return cause;
+    }
+  };
+
   return (
     <View style={styles.container}>
+      {/* Crime Report Overlay (shown first) */}
+      {!gameState.hasSeenReport && (
+        <CrimeReportScreen onDismiss={dismissReport} />
+      )}
+
       {/* Header */}
       <View style={styles.header}>
         <Text style={styles.title}>DAILY MURDER</Text>
         <Text style={styles.caseNumber}>Case #{currentCase.caseNumber}</Text>
       </View>
 
-      {/* Crime Report Overlay */}
+      {/* Question Counter (Hours Remaining) */}
+      <View style={styles.hoursContainer}>
+        <Text style={styles.hoursLabel}>TIME REMAINING</Text>
+        <Text style={[styles.hoursValue, hoursRemaining <= 6 && styles.hoursLow]}>
+          {hoursRemaining} {hoursRemaining === 1 ? 'HOUR' : 'HOURS'}
+        </Text>
+        {isTimeUp && (
+          <Text style={styles.caseGoldText}>CASE GONE COLD</Text>
+        )}
+      </View>
+
+      {/* Crime Report Summary */}
       <View style={styles.crimeReport}>
         <Text style={styles.crimeReportTitle}>📋 CRIME REPORT</Text>
         <Text style={styles.crimeReportText}>
@@ -51,7 +82,7 @@ export default function GameScreen3D({ onNavigateToAccusation }: Props) {
         </Text>
         <Text style={styles.crimeReportText}>
           <Text style={styles.crimeReportLabel}>Cause of death: </Text>
-          Stabbing
+          {getCauseOfDeathText(currentCase.crimeDetails.causeOfDeath)}
         </Text>
         <Text style={styles.crimeReportText}>
           <Text style={styles.crimeReportLabel}>Time: </Text>
@@ -82,7 +113,7 @@ export default function GameScreen3D({ onNavigateToAccusation }: Props) {
 
       {/* Arrest Button */}
       <TouchableOpacity
-        style={styles.arrestButton}
+        style={[styles.arrestButton, isTimeUp && styles.arrestButtonUrgent]}
         onPress={onNavigateToAccusation}
       >
         <Text style={styles.arrestButtonText}>🔗 MAKE AN ARREST 🔗</Text>
@@ -137,6 +168,39 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     letterSpacing: 2,
     marginTop: 2,
+  },
+  hoursContainer: {
+    position: 'absolute',
+    top: 15,
+    right: 15,
+    zIndex: 10,
+    backgroundColor: 'rgba(44, 24, 16, 0.95)',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#8B7355',
+    alignItems: 'center',
+  },
+  hoursLabel: {
+    color: '#8B7355',
+    fontSize: 9,
+    letterSpacing: 1,
+    fontWeight: 'bold',
+  },
+  hoursValue: {
+    color: '#D4AF37',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginTop: 2,
+  },
+  hoursLow: {
+    color: '#FF4444',
+  },
+  caseGoldText: {
+    color: '#FF4444',
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginTop: 4,
   },
   crimeReport: {
     position: 'absolute',
@@ -201,6 +265,10 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
     elevation: 8,
   },
+  arrestButtonUrgent: {
+    backgroundColor: '#FF4444',
+    borderColor: '#FFD700',
+  },
   arrestButtonText: {
     color: '#F5E6D3',
     fontSize: 16,
@@ -209,4 +277,3 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
   },
 });
-

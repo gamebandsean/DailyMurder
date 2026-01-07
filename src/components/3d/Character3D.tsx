@@ -13,12 +13,13 @@ interface Character3DProps {
   characterIndex?: number; // To determine unique features
 }
 
-// Hair colors for variety
+// Hair colors for variety (5 characters now)
 const HAIR_COLORS = [
   '#2C1810', // Dark brown
   '#D4A574', // Blonde
   '#1A1A1A', // Black
   '#8B4513', // Auburn/red
+  '#4A4A4A', // Gray
 ];
 
 // Low-poly stylized character - geometric/angular design with unique features

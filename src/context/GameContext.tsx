@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { GameState, DailyCase } from '../types';
+import { GameState, DailyCase, CharacterEvidence, GameSettings } from '../types';
 import { generateDailyCase } from '../utils/storyGenerator';
 import { generateResponse } from '../utils/characterResponses';
 
@@ -10,18 +10,45 @@ interface GameContextType {
   makeAccusation: (suspectId: string) => boolean;
   resetGame: () => void;
   revealItem: (characterId: string) => void;
+  dismissReport: () => void;
+  updateEvidence: (characterId: string, evidence: Partial<CharacterEvidence>) => void;
+  updateSettings: (settings: Partial<GameSettings>) => void;
+  getQuestionsRemaining: () => number;
+  canAskQuestions: () => boolean;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
+const defaultSettings: GameSettings = {
+  maxQuestions: 24,
+  debugMode: false,
+};
+
+const createInitialEvidence = (): CharacterEvidence => ({
+  nameRevealed: false,
+  relationshipRevealed: false,
+  itemRevealed: false,
+  motiveRevealed: false,
+  motiveText: null,
+  meansRevealed: false,
+  meansText: null,
+  opportunityRevealed: false,
+  opportunityText: null,
+});
+
 const initialGameState: GameState = {
   currentCase: null,
+  questionsAsked: 0,
+  maxQuestions: 24,
   interrogationHistory: [],
-  learnedSecrets: [],
+  revealedInfo: [],
+  characterEvidence: new Map(),
   revealedItems: [],
   hasAccused: false,
   accusedId: null,
   wasCorrect: null,
+  hasSeenReport: false,
+  settings: defaultSettings,
 };
 
 export function GameProvider({ children }: { children: ReactNode }) {
@@ -29,14 +56,39 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const initializeGame = () => {
     const dailyCase = generateDailyCase();
+    
+    // Initialize evidence tracking for each character
+    const characterEvidence = new Map<string, CharacterEvidence>();
+    dailyCase.characters.forEach(char => {
+      characterEvidence.set(char.suspect.id, createInitialEvidence());
+    });
+    
     setGameState({
       ...initialGameState,
       currentCase: dailyCase,
+      characterEvidence,
+      maxQuestions: defaultSettings.maxQuestions,
     });
+  };
+
+  const dismissReport = () => {
+    setGameState(prev => ({
+      ...prev,
+      hasSeenReport: true,
+    }));
+  };
+
+  const getQuestionsRemaining = (): number => {
+    return gameState.maxQuestions - gameState.questionsAsked;
+  };
+
+  const canAskQuestions = (): boolean => {
+    return gameState.questionsAsked < gameState.maxQuestions;
   };
 
   const askQuestion = (characterId: string, question: string): string => {
     if (!gameState.currentCase) return "No case loaded.";
+    if (!canAskQuestions()) return "You've run out of time. The case has gone cold.";
     
     const character = gameState.currentCase.characters.find(
       c => c.suspect.id === characterId
@@ -44,42 +96,56 @@ export function GameProvider({ children }: { children: ReactNode }) {
     
     if (!character) return "Character not found.";
     
-    const { response, revealedSecret, revealedItemId } = generateResponse(
+    const { response, revealedInfo: newRevealedInfo, evidenceUpdate } = generateResponse(
       question,
       character,
       gameState.currentCase.characters,
       gameState.currentCase,
-      gameState.learnedSecrets
+      gameState.revealedInfo
     );
     
     // Update state with new info
     setGameState(prev => {
-      const newLearnedSecrets = [...prev.learnedSecrets];
+      const newRevealedInfoList = [...prev.revealedInfo];
       const newRevealedItems = [...prev.revealedItems];
+      const newCharacterEvidence = new Map(prev.characterEvidence);
       
-      // If a secret was revealed, track it
-      if (revealedSecret) {
-        const alreadyKnown = newLearnedSecrets.some(
-          s => s.aboutId === revealedSecret.aboutId && s.secret === revealedSecret.secret
+      // Track revealed info
+      if (newRevealedInfo) {
+        const alreadyKnown = newRevealedInfoList.some(
+          s => s.aboutCharacterId === newRevealedInfo.aboutCharacterId && 
+               s.info === newRevealedInfo.info
         );
         if (!alreadyKnown) {
-          newLearnedSecrets.push({
-            aboutId: revealedSecret.aboutId,
-            secret: revealedSecret.secret,
-            fromId: characterId,
+          newRevealedInfoList.push({
+            fromCharacterId: characterId,
+            aboutCharacterId: newRevealedInfo.aboutCharacterId,
+            info: newRevealedInfo.info,
+            infoType: newRevealedInfo.infoType,
           });
         }
       }
       
-      // If an item was revealed, track it
-      if (revealedItemId && !newRevealedItems.includes(revealedItemId)) {
-        newRevealedItems.push(revealedItemId);
+      // Update character evidence
+      if (evidenceUpdate) {
+        const currentEvidence = newCharacterEvidence.get(characterId) || createInitialEvidence();
+        newCharacterEvidence.set(characterId, {
+          ...currentEvidence,
+          ...evidenceUpdate,
+        });
+        
+        // If item was revealed, track it
+        if (evidenceUpdate.itemRevealed && !newRevealedItems.includes(characterId)) {
+          newRevealedItems.push(characterId);
+        }
       }
       
       return {
         ...prev,
-        learnedSecrets: newLearnedSecrets,
+        questionsAsked: prev.questionsAsked + 1,
+        revealedInfo: newRevealedInfoList,
         revealedItems: newRevealedItems,
+        characterEvidence: newCharacterEvidence,
         interrogationHistory: [
           ...prev.interrogationHistory,
           {
@@ -93,6 +159,21 @@ export function GameProvider({ children }: { children: ReactNode }) {
     });
     
     return response;
+  };
+
+  const updateEvidence = (characterId: string, evidence: Partial<CharacterEvidence>) => {
+    setGameState(prev => {
+      const newCharacterEvidence = new Map(prev.characterEvidence);
+      const currentEvidence = newCharacterEvidence.get(characterId) || createInitialEvidence();
+      newCharacterEvidence.set(characterId, {
+        ...currentEvidence,
+        ...evidence,
+      });
+      return {
+        ...prev,
+        characterEvidence: newCharacterEvidence,
+      };
+    });
   };
 
   const revealItem = (characterId: string) => {
@@ -123,13 +204,29 @@ export function GameProvider({ children }: { children: ReactNode }) {
   };
 
   const resetGame = () => {
-    // Generate a new random case (not daily-seeded for replay)
     const randomSeed = Date.now();
     const newCase = generateDailyCase(randomSeed);
+    
+    const characterEvidence = new Map<string, CharacterEvidence>();
+    newCase.characters.forEach(char => {
+      characterEvidence.set(char.suspect.id, createInitialEvidence());
+    });
+    
     setGameState({
       ...initialGameState,
       currentCase: newCase,
+      characterEvidence,
+      maxQuestions: gameState.settings.maxQuestions,
+      settings: gameState.settings,
     });
+  };
+
+  const updateSettings = (settings: Partial<GameSettings>) => {
+    setGameState(prev => ({
+      ...prev,
+      settings: { ...prev.settings, ...settings },
+      maxQuestions: settings.maxQuestions ?? prev.maxQuestions,
+    }));
   };
 
   useEffect(() => {
@@ -145,6 +242,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         makeAccusation,
         resetGame,
         revealItem,
+        dismissReport,
+        updateEvidence,
+        updateSettings,
+        getQuestionsRemaining,
+        canAskQuestions,
       }}
     >
       {children}

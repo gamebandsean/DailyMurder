@@ -13,20 +13,22 @@ interface Scene3DProps {
   revealedItems: string[];
 }
 
-// Character colors - distinct noir palette
+// Character colors - distinct noir palette (5 characters now)
 const CHARACTER_COLORS = [
   '#8B4513', // Saddle brown
   '#2F4F4F', // Dark slate gray
   '#8B0000', // Dark red
   '#2E4E2E', // Dark green
+  '#4A3080', // Purple
 ];
 
-// Character positions around the body in a semi-circle
+// Character positions around the body in a semi-circle (5 positions)
 const CHARACTER_POSITIONS: [number, number, number][] = [
-  [-2, 0, 1.2],     // Front left
-  [-0.7, 0, 1.8],   // Front center-left
-  [0.7, 0, 1.8],    // Front center-right
-  [2, 0, 1.2],      // Front right
+  [-2.2, 0, 0.8],    // Far left
+  [-1.1, 0, 1.6],    // Left
+  [0, 0, 2],         // Center
+  [1.1, 0, 1.6],     // Right
+  [2.2, 0, 0.8],     // Far right
 ];
 
 // Simple camera controls

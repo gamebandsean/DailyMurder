@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   },
   gameFrame: {
     width: 960,
-    height: 700, // Adjusted for 3D view
+    height: 800, // Adjusted for 3D view
     backgroundColor: '#0A0505',
     borderRadius: 16,
     overflow: 'hidden',

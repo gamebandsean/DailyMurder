@@ -1,68 +1,105 @@
-import { CharacterState, DailyCase, RelationshipDetail } from '../types';
+import { CharacterState, DailyCase, CharacterEvidence } from '../types';
+
+interface RevealedInfo {
+  fromCharacterId: string;
+  aboutCharacterId: string;
+  info: string;
+  infoType: 'motive' | 'means' | 'opportunity' | 'general';
+}
 
 interface ResponseContext {
   character: CharacterState;
   allCharacters: CharacterState[];
   case_: DailyCase;
   question: string;
-  learnedSecrets: { aboutId: string; secret: string; fromId: string }[];
+  revealedInfo: RevealedInfo[];
+}
+
+interface ResponseResult {
+  response: string;
+  revealedInfo?: {
+    aboutCharacterId: string;
+    info: string;
+    infoType: 'motive' | 'means' | 'opportunity' | 'general';
+  };
+  evidenceUpdate?: Partial<CharacterEvidence>;
 }
 
 // ============ QUESTION ANALYSIS ============
 
 function analyzeQuestion(question: string, ctx: ResponseContext): {
+  aboutName: boolean;
   aboutAlibi: boolean;
   aboutItem: boolean;
   aboutMotive: boolean;
   aboutVictim: boolean;
   aboutSuspicions: boolean;
+  aboutRelationship: boolean;
   aboutOtherCharacter: string | null;
   askingForSecret: boolean;
   askingIfGuilty: boolean;
   presentingEvidence: boolean;
-  presentedSecret: string | null;
-  askingAboutSwap: boolean;
+  presentedInfo: RevealedInfo | null;
+  mentionedCharacterName: string | null;
 } {
   const q = question.toLowerCase();
   
   // Check if asking about specific character
   let aboutOtherCharacter: string | null = null;
+  let mentionedCharacterName: string | null = null;
+  
   for (const char of ctx.allCharacters) {
     if (char.suspect.id === ctx.character.suspect.id) continue;
     const firstName = char.suspect.name.split(' ')[0].toLowerCase();
     const lastName = char.suspect.name.split(' ').slice(-1)[0].toLowerCase();
     if (q.includes(firstName) || q.includes(lastName)) {
       aboutOtherCharacter = char.suspect.id;
+      mentionedCharacterName = char.suspect.name;
       break;
     }
   }
   
-  // Check if presenting evidence/secret to this character
-  let presentedSecret: string | null = null;
-  for (const secret of ctx.learnedSecrets) {
-    if (secret.aboutId === ctx.character.suspect.id) {
-      // Check if the question contains keywords from the secret
-      const secretWords = secret.secret.toLowerCase().split(' ').filter(w => w.length > 4);
-      const matchCount = secretWords.filter(w => q.includes(w)).length;
-      if (matchCount >= 2) {
-        presentedSecret = secret.secret;
+  // Check if player is presenting info they learned from another character
+  // This is verified by checking if the info exists in revealedInfo
+  let presentedInfo: RevealedInfo | null = null;
+  
+  // Check if they're claiming someone told them something about this character
+  const claimPattern = /(\w+)\s+(told|said|mentioned|revealed|confessed)/i;
+  const match = q.match(claimPattern);
+  
+  if (match) {
+    const claimedSource = match[1].toLowerCase();
+    // Find the source character
+    for (const char of ctx.allCharacters) {
+      const firstName = char.suspect.name.split(' ')[0].toLowerCase();
+      if (claimedSource === firstName) {
+        // Check if this character actually told them about the current character
+        const info = ctx.revealedInfo.find(
+          r => r.fromCharacterId === char.suspect.id && 
+               r.aboutCharacterId === ctx.character.suspect.id
+        );
+        if (info) {
+          presentedInfo = info;
+        }
         break;
       }
     }
   }
   
   return {
-    aboutAlibi: /\b(alibi|where were you|where was|at the time|that night|whereabouts|when)\b/i.test(q),
-    aboutItem: /\b(item|carrying|have on|holding|weapon|possess|pocket|what do you have|what are you carrying|on your person|show me)\b/i.test(q),
-    aboutMotive: /\b(motive|reason|why would|grudge|problem|issue|relationship|feel about)\b/i.test(q),
-    aboutVictim: /\b(victim|dead|deceased|murdered|killed)\b/i.test(q),
-    aboutSuspicions: /\b(suspect|think|who did|guilty|killer|murderer|trust|suspicious)\b/i.test(q),
+    aboutName: /\b(name|who are you|introduce yourself|call you)\b/i.test(q),
+    aboutAlibi: /\b(alibi|where were you|where was|at the time|that night|whereabouts|when|location|seen)\b/i.test(q),
+    aboutItem: /\b(item|carrying|have on|holding|weapon|possess|pocket|what do you have|what are you carrying|on your person|show me|object)\b/i.test(q),
+    aboutMotive: /\b(motive|reason|why would|grudge|problem|issue|angry|hate)\b/i.test(q),
+    aboutVictim: /\b(victim|dead|deceased|murdered|killed|think of|know|relationship)\b/i.test(q),
+    aboutRelationship: /\b(relationship|know the victim|connection|how did you know)\b/i.test(q),
+    aboutSuspicions: /\b(suspect|think|who did|guilty|killer|murderer|trust|suspicious|theory)\b/i.test(q),
     aboutOtherCharacter,
-    askingForSecret: /\b(secret|know about|tell me about|hiding|truth about|really know)\b/i.test(q),
-    askingIfGuilty: /\b(did you (do|kill|murder)|are you (guilty|the killer)|you killed|confess|admit)\b/i.test(q),
-    presentingEvidence: presentedSecret !== null || /\b(someone told me|i heard|i know that you|confronted with)\b/i.test(q),
-    presentedSecret,
-    askingAboutSwap: /\b(swap|exchange|originally|belong|whose|not yours|switched)\b/i.test(q),
+    askingForSecret: /\b(secret|know about|tell me about|hiding|truth about|really know|between us)\b/i.test(q),
+    askingIfGuilty: /\b(did you (do|kill|murder)|are you (guilty|the killer)|you killed|confess|admit|you did it)\b/i.test(q),
+    presentingEvidence: presentedInfo !== null,
+    presentedInfo,
+    mentionedCharacterName,
   };
 }
 
@@ -80,139 +117,176 @@ function getPrefix(character: CharacterState): string {
   return options[Math.floor(Math.random() * options.length)];
 }
 
+// Helper: Determine if character should lie about incriminating info
+// They don't ALWAYS lie - sometimes they tell the truth even when it hurts
+function shouldLie(character: CharacterState, isIncriminating: boolean): boolean {
+  if (!isIncriminating) return false;
+  if (!character.isGuilty) return false;
+  // Killer lies about incriminating things ~70% of the time
+  return Math.random() < 0.7;
+}
+
 // ============ RESPONSE GENERATORS ============
 
-function getAlibiResponse(ctx: ResponseContext): string {
+function getNameResponse(ctx: ResponseContext): ResponseResult {
+  const { character } = ctx;
+  const prefix = getPrefix(character);
+  
+  return {
+    response: `${prefix}My name is ${character.suspect.name}. I'm ${character.suspect.occupation.toLowerCase()}.`,
+    evidenceUpdate: { nameRevealed: true },
+  };
+}
+
+function getRelationshipResponse(ctx: ResponseContext): ResponseResult {
   const { character, case_ } = ctx;
   const prefix = getPrefix(character);
   
-  if (character.isGuilty) {
-    // Killer lies about alibi unless confronted
-    const hasBeenConfronted = character.presentedEvidence.length > 0;
-    if (hasBeenConfronted) {
-      return `${prefix}*sighs heavily* Fine. ${character.alibi.description}. I know how that looks, but I swear I didn't do it.`;
-    } else {
-      // Lie
-      return `${prefix}I was... in my room, resting. I wasn't anywhere near ${case_.crimeDetails.location}.`;
-    }
-  }
-  
-  if (character.alibi.isVerifiable) {
-    return `${prefix}${character.alibi.description}. ${character.alibi.witness || 'I can prove it.'}`;
-  } else {
-    return `${prefix}${character.alibi.description}. I know I can't prove it, but it's the truth.`;
-  }
+  return {
+    response: `${prefix}I was the victim's ${character.relationshipToVictim}. ${character.relationships.find(r => r.targetId === 'victim')?.opinionReason || 'We had a complicated relationship.'}`,
+    evidenceUpdate: { relationshipRevealed: true },
+  };
 }
 
-function getItemResponse(ctx: ResponseContext, askingAboutSwap: boolean): { response: string; revealedItemId: string } {
+function getAlibiResponse(ctx: ResponseContext): ResponseResult {
+  const { character, case_ } = ctx;
+  const prefix = getPrefix(character);
+  
+  const isIncriminating = character.alibi.wasAtCrimeScene;
+  const hasBeenConfronted = character.presentedEvidence.length > 0;
+  
+  // If guilty and near crime scene, might lie
+  if (character.isGuilty && isIncriminating && !hasBeenConfronted && shouldLie(character, true)) {
+    return {
+      response: `${prefix}I was in my room, resting. Nowhere near ${case_.crimeDetails.location}.`,
+    };
+  }
+  
+  // Truth (forced or voluntary)
+  let response = `${prefix}${character.alibi.description}.`;
+  
+  if (character.alibi.wasAtCrimeScene) {
+    response += ` I know that places me near the crime scene, but I didn't do anything wrong!`;
+    return {
+      response,
+      evidenceUpdate: {
+        opportunityRevealed: true,
+        opportunityText: `Was near ${case_.crimeDetails.location} at ${case_.crimeDetails.timeOfDeath}`,
+      },
+    };
+  }
+  
+  if (character.alibi.witness) {
+    response += ` ${character.alibi.witness}`;
+  }
+  
+  return { response };
+}
+
+function getItemResponse(ctx: ResponseContext): ResponseResult {
   const { character, case_ } = ctx;
   const prefix = getPrefix(character);
   const item = character.item;
   
-  // Check if item was swapped (current owner is not original owner)
+  const isIncriminating = item.isWeaponType;
+  const hasBeenConfronted = character.presentedEvidence.length > 0;
+  
+  // Guilty person with murder weapon might lie
+  if (character.isGuilty && item.isMurderWeapon && !hasBeenConfronted && shouldLie(character, true)) {
+    return {
+      response: `${prefix}I just have my pocket watch with me. Nothing unusual.`,
+    };
+  }
+  
+  // Truth
+  let response = `${prefix}I have my ${item.name}. ${item.emoji} ${item.description}`;
+  
+  // Check if it was swapped
   const wasSwapped = item.originalOwnerId !== character.suspect.id;
   const originalOwner = ctx.allCharacters.find(c => c.suspect.id === item.originalOwnerId);
   
-  if (character.isGuilty && item.isMurderWeapon) {
-    const hasBeenConfronted = character.presentedEvidence.length > 0;
-    if (hasBeenConfronted || askingAboutSwap) {
-      if (wasSwapped) {
-        return {
-          response: `${prefix}*looks defensive* Yes, I have the ${item.name}. ${item.emoji} But it's not mine! I got it from ${originalOwner?.suspect.name || 'someone else'} earlier. They must have... it must have been swapped somehow!`,
-          revealedItemId: character.suspect.id,
-        };
-      }
-      return {
-        response: `${prefix}*looks away* Yes, I have the ${item.name}. ${item.emoji} ${item.description}. But I can explain... I was holding it for someone!`,
-        revealedItemId: character.suspect.id,
-      };
-    } else {
-      // Lie about having a different item
-      return {
-        response: `${prefix}I just have my pocket watch with me. Nothing unusual.`,
-        revealedItemId: '', // Don't reveal yet when lying
-      };
-    }
+  if (wasSwapped && originalOwner) {
+    response += ` Actually, this originally belonged to ${originalOwner.suspect.name}. We must have swapped at some point.`;
   }
   
-  // Non-guilty character reveals their item honestly
-  let response = `${prefix}I have my ${item.name}. ${item.emoji} ${item.description}`;
+  const evidenceUpdate: Partial<CharacterEvidence> = {
+    itemRevealed: true,
+  };
   
-  if (wasSwapped && askingAboutSwap) {
-    response += ` Actually, this originally belonged to ${originalOwner?.suspect.name || 'someone else'}. We must have swapped items at some point.`;
+  // If it's a weapon type, this reveals MEANS
+  if (item.isWeaponType) {
+    evidenceUpdate.meansRevealed = true;
+    evidenceUpdate.meansText = `Has ${item.name} (${case_.crimeDetails.causeOfDeath} weapon)`;
   }
   
   return {
     response: response + '. Is that relevant?',
-    revealedItemId: character.suspect.id,
+    evidenceUpdate,
   };
 }
 
-function getMotiveResponse(ctx: ResponseContext): string {
-  const { character, case_ } = ctx;
+function getMotiveResponse(ctx: ResponseContext): ResponseResult {
+  const { character } = ctx;
   const prefix = getPrefix(character);
   
-  if (character.isGuilty) {
-    const hasBeenConfronted = character.presentedEvidence.length > 0;
-    if (hasBeenConfronted) {
-      return `${prefix}*voice breaks* ${character.motive.description}. I was angry, yes. But I didn't mean for it to go so far...`;
-    } else {
-      // Downplay motive
-      return `${prefix}The victim and I had our differences, like everyone else here. Nothing worth killing over.`;
-    }
+  const hasBeenConfronted = character.presentedEvidence.length > 0;
+  
+  // Guilty person might lie about motive
+  if (character.isGuilty && !hasBeenConfronted && shouldLie(character, true)) {
+    return {
+      response: `${prefix}The victim and I had our differences, like everyone. Nothing worth killing over.`,
+    };
   }
   
-  return `${prefix}${character.motive.description}. But that's hardly a reason to commit murder.`;
+  // Truth
+  if (character.motive.hasMotive) {
+    return {
+      response: `${prefix}${character.motive.description}. But I didn't kill anyone!`,
+      evidenceUpdate: {
+        motiveRevealed: true,
+        motiveText: character.motive.description,
+      },
+    };
+  }
+  
+  return {
+    response: `${prefix}I had no reason to want the victim dead. We got along fine.`,
+  };
 }
 
-function getVictimResponse(ctx: ResponseContext): string {
+function getVictimResponse(ctx: ResponseContext): ResponseResult {
   const { character, case_ } = ctx;
   const prefix = getPrefix(character);
   
   const victimRel = character.relationships.find(r => r.targetId === 'victim');
-  if (!victimRel) {
-    return `${prefix}I didn't know the victim very well.`;
-  }
   
-  if (character.hasOpenedUp) {
-    // More honest after being shown a secret about them
-    return `${prefix}*sighs* Look, ${victimRel.opinionReason}. And I'll tell you something else - ${victimRel.secretInfo}.`;
-  }
-  
-  return `${prefix}${victimRel.opinionReason}. ${case_.victim.background}`;
+  return {
+    response: `${prefix}${victimRel?.opinionReason || 'I knew the victim somewhat.'}`,
+    evidenceUpdate: { relationshipRevealed: true },
+  };
 }
 
-function getSuspicionResponse(ctx: ResponseContext): string {
+function getSuspicionResponse(ctx: ResponseContext): ResponseResult {
   const { character, allCharacters } = ctx;
   const prefix = getPrefix(character);
   
   if (character.suspicion === 'none') {
-    return `${prefix}${character.suspicionReason}. I truly can't point fingers.`;
+    return { response: `${prefix}${character.suspicionReason}` };
   }
   
-  if (character.suspicion === 'one' && character.suspicionTargets.length > 0) {
+  if (character.suspicionTargets.length > 0) {
     const suspect = allCharacters.find(c => c.suspect.id === character.suspicionTargets[0]);
     if (suspect) {
-      return `${prefix}If you want my honest opinion... ${character.suspicionReason}. You should talk to ${suspect.suspect.name}.`;
+      return {
+        response: `${prefix}If you want my honest opinion... ${character.suspicionReason}. You should talk to ${suspect.suspect.name}.`,
+      };
     }
   }
   
-  if (character.suspicion === 'multiple') {
-    return `${prefix}${character.suspicionReason}. I wouldn't rule anyone out.`;
-  }
-  
-  return `${prefix}I have my suspicions, but I'd rather not accuse anyone without proof.`;
+  return { response: `${prefix}I have my suspicions, but I'd rather not accuse without proof.` };
 }
 
-function getSecretAboutOther(ctx: ResponseContext, targetId: string): { secret: string; revealed: boolean } | null {
-  const rel = ctx.character.relationships.find(r => r.targetId === targetId);
-  if (rel && !rel.secretRevealed) {
-    return { secret: rel.secretInfo, revealed: false };
-  }
-  return null;
-}
-
-function getOtherCharacterResponse(ctx: ResponseContext, targetId: string): string {
+function getOtherCharacterResponse(ctx: ResponseContext, targetId: string): ResponseResult {
   const { character, allCharacters } = ctx;
   const prefix = getPrefix(character);
   
@@ -220,59 +294,81 @@ function getOtherCharacterResponse(ctx: ResponseContext, targetId: string): stri
   const rel = character.relationships.find(r => r.targetId === targetId);
   
   if (!target || !rel) {
-    return `${prefix}I don't know who you're referring to.`;
+    return { response: `${prefix}I don't know who you're referring to.` };
   }
   
-  // If asking for secrets and character has opened up
-  if (character.hasOpenedUp || ctx.learnedSecrets.some(s => s.aboutId === character.suspect.id)) {
-    return `${prefix}${rel.opinionReason}. And between us... ${rel.secretInfo}`;
+  // Characters ALWAYS tell the truth about OTHER characters
+  // This is key to the game mechanic
+  let response = `${prefix}${target.suspect.name}? ${rel.opinionReason}`;
+  
+  // If they know a secret about this person, they might share it
+  if (rel.secretInfo && (character.hasOpenedUp || Math.random() < 0.4)) {
+    response += ` Between us... ${rel.secretInfo}`;
+    
+    return {
+      response,
+      revealedInfo: {
+        aboutCharacterId: targetId,
+        info: rel.secretInfo,
+        infoType: rel.secretType,
+      },
+    };
   }
   
-  // Standard response based on opinion
-  if (rel.opinion === 'positive') {
-    return `${prefix}${target.suspect.name}? ${rel.opinionReason}. I can't imagine them doing something like this.`;
-  } else if (rel.opinion === 'negative') {
-    return `${prefix}${target.suspect.name}? ${rel.opinionReason}. I wouldn't be surprised if they were involved.`;
-  }
-  
-  return `${prefix}${target.suspect.name}? ${rel.opinionReason}. I don't have much to say about them.`;
+  return { response };
 }
 
-function getConfrontedResponse(ctx: ResponseContext, presentedSecret: string): string {
-  const { character } = ctx;
+function getConfrontedResponse(ctx: ResponseContext, presentedInfo: RevealedInfo): ResponseResult {
+  const { character, case_ } = ctx;
   const prefix = getPrefix(character);
   
+  // Player has presented verified info that another character told them
+  // This FORCES truthful responses
+  
+  character.presentedEvidence.push(presentedInfo.info);
+  character.hasOpenedUp = true;
+  
   if (character.isGuilty) {
-    // Killer breaks down when confronted
-    return `${prefix}*face goes pale* How do you... where did you hear that? *sighs heavily* Fine. You want the truth? ${character.motive.description}. I was at ${character.alibi.description}. And yes, I have the ${character.item.name}. ${character.item.emoji} But I'm telling you, I didn't do it! You have to believe me!`;
+    // Killer must admit things when confronted with evidence
+    return {
+      response: `${prefix}*face goes pale* Someone told you that? I... *sighs heavily* Fine. You caught me in some lies. ${character.motive.description}. And yes, I was ${character.alibi.description}. But I swear I didn't kill anyone!`,
+      evidenceUpdate: {
+        motiveRevealed: true,
+        motiveText: character.motive.description,
+        opportunityRevealed: character.alibi.wasAtCrimeScene,
+        opportunityText: character.alibi.wasAtCrimeScene ? `Was near ${case_.crimeDetails.location}` : null,
+      },
+    };
   }
   
   // Non-killer opens up
-  return `${prefix}*looks surprised* Someone told you that? I... yes, it's true. I suppose I should be more honest with you. What else do you want to know? I'll tell you everything I know.`;
+  return {
+    response: `${prefix}*looks surprised* So someone told you about that. Yes, it's true. I'll be completely honest with you from now on. What do you want to know?`,
+  };
 }
 
-function getGuiltyDenialResponse(ctx: ResponseContext): string {
+function getGuiltyDenialResponse(ctx: ResponseContext): ResponseResult {
   const { character } = ctx;
   const prefix = getPrefix(character);
-  
-  const hasBeenConfronted = character.presentedEvidence.length > 0;
-  
-  if (character.isGuilty && hasBeenConfronted) {
-    return `${prefix}*voice shaking* I know how this looks. Everything points to me. But I swear on my life, I did not kill them. Someone is framing me!`;
-  }
   
   const denials = [
     `${prefix}Absolutely not! How dare you accuse me of such a thing!`,
     `${prefix}I am innocent. Look elsewhere for your murderer.`,
-    `${prefix}No. I did not do this. You're wasting your time with me.`,
+    `${prefix}No. I did not do this.`,
+    `${prefix}You're making a serious mistake accusing me.`,
   ];
   
-  return denials[Math.floor(Math.random() * denials.length)];
+  return { response: denials[Math.floor(Math.random() * denials.length)] };
 }
 
-function getGeneralResponse(ctx: ResponseContext): string {
+function getGeneralResponse(ctx: ResponseContext): ResponseResult {
   const prefix = getPrefix(ctx.character);
-  return `${prefix}I'm not sure what you're asking. Could you be more specific?`;
+  const responses = [
+    `${prefix}I'm not sure what you're asking. Could you be more specific?`,
+    `${prefix}Can you clarify what you mean?`,
+    `${prefix}I don't understand the question.`,
+  ];
+  return { response: responses[Math.floor(Math.random() * responses.length)] };
 }
 
 // ============ MAIN RESPONSE GENERATOR ============
@@ -282,66 +378,61 @@ export function generateResponse(
   character: CharacterState,
   allCharacters: CharacterState[],
   case_: DailyCase,
-  learnedSecrets: { aboutId: string; secret: string; fromId: string }[] = []
-): { response: string; revealedSecret?: { aboutId: string; secret: string }; revealedItemId?: string } {
+  revealedInfo: RevealedInfo[] = []
+): ResponseResult {
   
-  const ctx: ResponseContext = { character, allCharacters, case_, question, learnedSecrets };
+  const ctx: ResponseContext = { character, allCharacters, case_, question, revealedInfo };
   const analysis = analyzeQuestion(question, ctx);
   
-  // If presenting evidence about this character
-  if (analysis.presentingEvidence && analysis.presentedSecret) {
-    character.presentedEvidence.push(analysis.presentedSecret);
-    character.hasOpenedUp = true;
-    const response = getConfrontedResponse(ctx, analysis.presentedSecret);
-    // When confronted, also reveal their item
-    return { response, revealedItemId: character.suspect.id };
+  // If presenting VERIFIED evidence from another character
+  if (analysis.presentingEvidence && analysis.presentedInfo) {
+    return getConfrontedResponse(ctx, analysis.presentedInfo);
   }
   
   // If asking if guilty
   if (analysis.askingIfGuilty) {
-    return { response: getGuiltyDenialResponse(ctx) };
+    return getGuiltyDenialResponse(ctx);
   }
   
-  // About item - reveals the item!
+  // About their name
+  if (analysis.aboutName) {
+    return getNameResponse(ctx);
+  }
+  
+  // About item
   if (analysis.aboutItem) {
-    const { response, revealedItemId } = getItemResponse(ctx, analysis.askingAboutSwap);
-    return { response, revealedItemId };
+    return getItemResponse(ctx);
   }
   
-  // If asking about another character (might reveal a secret)
+  // About relationship to victim
+  if (analysis.aboutRelationship) {
+    return getRelationshipResponse(ctx);
+  }
+  
+  // About another character (always truthful about others!)
   if (analysis.aboutOtherCharacter) {
-    const response = getOtherCharacterResponse(ctx, analysis.aboutOtherCharacter);
-    
-    // Check if a secret was revealed
-    const rel = character.relationships.find(r => r.targetId === analysis.aboutOtherCharacter);
-    if (rel && !rel.secretRevealed && (character.hasOpenedUp || analysis.askingForSecret)) {
-      rel.secretRevealed = true;
-      return {
-        response,
-        revealedSecret: { aboutId: analysis.aboutOtherCharacter, secret: rel.secretInfo }
-      };
-    }
-    
-    return { response };
+    return getOtherCharacterResponse(ctx, analysis.aboutOtherCharacter);
   }
   
   // About suspicions
   if (analysis.aboutSuspicions) {
-    return { response: getSuspicionResponse(ctx) };
+    return getSuspicionResponse(ctx);
   }
   
   // About alibi
   if (analysis.aboutAlibi) {
-    return { response: getAlibiResponse(ctx) };
+    return getAlibiResponse(ctx);
   }
   
   // About motive/victim
-  if (analysis.aboutMotive || analysis.aboutVictim) {
-    if (analysis.aboutVictim) {
-      return { response: getVictimResponse(ctx) };
-    }
-    return { response: getMotiveResponse(ctx) };
+  if (analysis.aboutMotive) {
+    return getMotiveResponse(ctx);
   }
   
-  return { response: getGeneralResponse(ctx) };
+  if (analysis.aboutVictim) {
+    return getVictimResponse(ctx);
+  }
+  
+  return getGeneralResponse(ctx);
 }
+
