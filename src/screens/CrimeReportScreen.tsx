@@ -30,6 +30,11 @@ export default function CrimeReportScreen({ onDismiss }: Props) {
       <View style={styles.reportContainer}>
         {/* Paper texture effect */}
         <View style={styles.paper}>
+          {/* Close Button */}
+          <TouchableOpacity style={styles.closeButton} onPress={onDismiss}>
+            <Text style={styles.closeButtonText}>✕</Text>
+          </TouchableOpacity>
+
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.confidential}>⚠️ CONFIDENTIAL ⚠️</Text>
@@ -271,6 +276,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     letterSpacing: 2,
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#333',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  closeButtonText: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   beginButton: {
     backgroundColor: '#8B0000',

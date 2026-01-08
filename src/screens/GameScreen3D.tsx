@@ -11,9 +11,10 @@ interface Props {
 }
 
 export default function GameScreen3D({ onNavigateToAccusation }: Props) {
-  const { gameState, dismissReport, getQuestionsRemaining } = useGame();
+  const { gameState, dismissReport, getQuestionsRemaining, useLLM, setUseLLM } = useGame();
   const [selectedCharacter, setSelectedCharacter] = useState<CharacterState | null>(null);
   const [isInterrogating, setIsInterrogating] = useState(false);
+  const [showReport, setShowReport] = useState(!gameState.hasSeenReport);
 
   if (!gameState.currentCase) {
     return (
@@ -39,6 +40,17 @@ export default function GameScreen3D({ onNavigateToAccusation }: Props) {
     setSelectedCharacter(null);
   };
 
+  const handleDismissReport = () => {
+    setShowReport(false);
+    if (!gameState.hasSeenReport) {
+      dismissReport();
+    }
+  };
+
+  const handleShowReport = () => {
+    setShowReport(true);
+  };
+
   const getCauseOfDeathText = (cause: string): string => {
     switch (cause) {
       case 'stabbed': return 'Stabbing';
@@ -51,46 +63,37 @@ export default function GameScreen3D({ onNavigateToAccusation }: Props) {
 
   return (
     <View style={styles.container}>
-      {/* Crime Report Overlay (shown first) */}
-      {!gameState.hasSeenReport && (
-        <CrimeReportScreen onDismiss={dismissReport} />
-      )}
+      {/* Header Bar */}
+      <View style={styles.headerBar}>
+        {/* Case File Button */}
+        <TouchableOpacity style={styles.caseFileButton} onPress={handleShowReport}>
+          <Text style={styles.caseFileButtonText}>📋</Text>
+        </TouchableOpacity>
 
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.title}>DAILY MURDER</Text>
-        <Text style={styles.caseNumber}>Case #{currentCase.caseNumber}</Text>
+        {/* Title */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.title}>DAILY MURDER</Text>
+          <Text style={styles.caseNumber}>Case #{currentCase.caseNumber}</Text>
+        </View>
+
+        {/* Hours Remaining */}
+        <View style={styles.hoursContainer}>
+          <Text style={styles.hoursValue}>{hoursRemaining}</Text>
+          <Text style={[styles.hoursLabel, hoursRemaining <= 6 && styles.hoursLow]}>
+            HRS
+          </Text>
+        </View>
       </View>
 
-      {/* Question Counter (Hours Remaining) */}
-      <View style={styles.hoursContainer}>
-        <Text style={styles.hoursLabel}>TIME REMAINING</Text>
-        <Text style={[styles.hoursValue, hoursRemaining <= 6 && styles.hoursLow]}>
-          {hoursRemaining} {hoursRemaining === 1 ? 'HOUR' : 'HOURS'}
-        </Text>
-        {isTimeUp && (
-          <Text style={styles.caseGoldText}>CASE GONE COLD</Text>
-        )}
-      </View>
-
-      {/* Crime Report Summary */}
-      <View style={styles.crimeReport}>
-        <Text style={styles.crimeReportTitle}>📋 CRIME REPORT</Text>
-        <Text style={styles.crimeReportText}>
-          <Text style={styles.crimeReportLabel}>Victim: </Text>
+      {/* Crime Summary (compact) */}
+      <View style={styles.crimeSummary}>
+        <Text style={styles.crimeSummaryText}>
+          <Text style={styles.crimeSummaryLabel}>Victim: </Text>
           {currentCase.victim.name}
-        </Text>
-        <Text style={styles.crimeReportText}>
-          <Text style={styles.crimeReportLabel}>Cause of death: </Text>
+          <Text style={styles.crimeSummaryLabel}>  •  Death: </Text>
           {getCauseOfDeathText(currentCase.crimeDetails.causeOfDeath)}
-        </Text>
-        <Text style={styles.crimeReportText}>
-          <Text style={styles.crimeReportLabel}>Time: </Text>
-          {currentCase.crimeDetails.timeOfDeath}
-        </Text>
-        <Text style={styles.crimeReportText}>
-          <Text style={styles.crimeReportLabel}>Location: </Text>
-          {currentCase.crimeDetails.location}
+          <Text style={styles.crimeSummaryLabel}>  •  </Text>
+          {currentCase.crimeDetails.timeOfDeath} in {currentCase.crimeDetails.location}
         </Text>
       </View>
 
@@ -106,8 +109,16 @@ export default function GameScreen3D({ onNavigateToAccusation }: Props) {
 
       {/* Instructions */}
       <View style={styles.instructions}>
+        <TouchableOpacity 
+          style={styles.aiModeButton}
+          onPress={() => setUseLLM(!useLLM)}
+        >
+          <Text style={[styles.aiModeText, useLLM && styles.aiModeActive]}>
+            {useLLM ? '🤖 AI Mode' : '📝 Classic Mode'}
+          </Text>
+        </TouchableOpacity>
         <Text style={styles.instructionText}>
-          🔍 Click on suspects to interrogate • Drag to rotate view
+          🔍 Click suspects to interrogate • Drag to rotate
         </Text>
       </View>
 
@@ -118,6 +129,11 @@ export default function GameScreen3D({ onNavigateToAccusation }: Props) {
       >
         <Text style={styles.arrestButtonText}>🔗 MAKE AN ARREST 🔗</Text>
       </TouchableOpacity>
+
+      {/* Crime Report Overlay */}
+      {showReport && (
+        <CrimeReportScreen onDismiss={handleDismissReport} />
+      )}
 
       {/* Interrogation Modal */}
       {isInterrogating && selectedCharacter && (
@@ -135,6 +151,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0A0505',
+    overflow: 'hidden',
   },
   loadingText: {
     color: '#F5E6D3',
@@ -142,128 +159,129 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 100,
   },
-  header: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    paddingTop: 15,
-    paddingHorizontal: 20,
-    backgroundColor: 'rgba(10, 5, 5, 0.8)',
+  headerBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#1A0F0A',
+    borderBottomWidth: 1,
+    borderBottomColor: '#4A3228',
+    zIndex: 100,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#D4AF37',
-    textAlign: 'center',
-    letterSpacing: 4,
-    textShadowColor: '#000',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 4,
-  },
-  caseNumber: {
-    fontSize: 12,
-    color: '#8B7355',
-    textAlign: 'center',
-    letterSpacing: 2,
-    marginTop: 2,
-  },
-  hoursContainer: {
-    position: 'absolute',
-    top: 15,
-    right: 15,
-    zIndex: 10,
-    backgroundColor: 'rgba(44, 24, 16, 0.95)',
-    borderRadius: 8,
-    padding: 10,
+  caseFileButton: {
+    backgroundColor: '#3D2617',
+    width: 36,
+    height: 36,
+    borderRadius: 6,
     borderWidth: 1,
     borderColor: '#8B7355',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  hoursLabel: {
-    color: '#8B7355',
-    fontSize: 9,
-    letterSpacing: 1,
+  caseFileButtonText: {
+    fontSize: 18,
+  },
+  titleContainer: {
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#D4AF37',
+    letterSpacing: 3,
+  },
+  caseNumber: {
+    fontSize: 10,
+    color: '#8B7355',
+    letterSpacing: 1,
+  },
+  hoursContainer: {
+    backgroundColor: '#3D2617',
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#8B7355',
   },
   hoursValue: {
     color: '#D4AF37',
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginTop: 2,
+  },
+  hoursLabel: {
+    color: '#8B7355',
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginLeft: 2,
   },
   hoursLow: {
     color: '#FF4444',
   },
-  caseGoldText: {
-    color: '#FF4444',
-    fontSize: 10,
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  crimeReport: {
-    position: 'absolute',
-    top: 70,
-    left: 15,
-    zIndex: 10,
+  crimeSummary: {
     backgroundColor: 'rgba(44, 24, 16, 0.9)',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#8B7355',
-    maxWidth: 220,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#4A3228',
   },
-  crimeReportTitle: {
-    color: '#D4AF37',
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 6,
-    letterSpacing: 1,
-  },
-  crimeReportText: {
+  crimeSummaryText: {
     color: '#F5E6D3',
     fontSize: 11,
-    marginBottom: 3,
+    textAlign: 'center',
   },
-  crimeReportLabel: {
-    color: '#B8860B',
-    fontWeight: 'bold',
+  crimeSummaryLabel: {
+    color: '#8B7355',
   },
   sceneContainer: {
     flex: 1,
   },
   instructions: {
     position: 'absolute',
-    bottom: 70,
+    bottom: 60,
     left: 0,
     right: 0,
     alignItems: 'center',
   },
   instructionText: {
     color: '#8B7355',
-    fontSize: 12,
+    fontSize: 11,
     letterSpacing: 1,
-    backgroundColor: 'rgba(10, 5, 5, 0.7)',
-    paddingHorizontal: 15,
-    paddingVertical: 5,
-    borderRadius: 15,
+    backgroundColor: 'rgba(10, 5, 5, 0.8)',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  aiModeButton: {
+    backgroundColor: 'rgba(10, 5, 5, 0.9)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+    marginBottom: 6,
+    borderWidth: 1,
+    borderColor: '#4A3228',
+  },
+  aiModeText: {
+    color: '#8B7355',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  aiModeActive: {
+    color: '#4ADE80',
   },
   arrestButton: {
     position: 'absolute',
-    bottom: 15,
-    left: 20,
-    right: 20,
+    bottom: 12,
+    left: 15,
+    right: 15,
     backgroundColor: '#8B0000',
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 8,
     borderWidth: 2,
     borderColor: '#D4AF37',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.5,
-    shadowRadius: 6,
-    elevation: 8,
   },
   arrestButtonUrgent: {
     backgroundColor: '#FF4444',
@@ -271,7 +289,7 @@ const styles = StyleSheet.create({
   },
   arrestButtonText: {
     color: '#F5E6D3',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
     letterSpacing: 2,

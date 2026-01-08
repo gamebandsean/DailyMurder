@@ -87,7 +87,7 @@ function analyzeQuestion(question: string, ctx: ResponseContext): {
   }
   
   return {
-    aboutName: /\b(name|who are you|introduce yourself|call you)\b/i.test(q),
+    aboutName: /\b(name|who are you|introduce yourself|call you|what do you do|your job|for a living|occupation|profession|work)\b/i.test(q),
     aboutAlibi: /\b(alibi|where were you|where was|at the time|that night|whereabouts|when|location|seen)\b/i.test(q),
     aboutItem: /\b(item|carrying|have on|holding|weapon|possess|pocket|what do you have|what are you carrying|on your person|show me|object)\b/i.test(q),
     aboutMotive: /\b(motive|reason|why would|grudge|problem|issue|angry|hate)\b/i.test(q),
@@ -129,11 +129,27 @@ function shouldLie(character: CharacterState, isIncriminating: boolean): boolean
 // ============ RESPONSE GENERATORS ============
 
 function getNameResponse(ctx: ResponseContext): ResponseResult {
-  const { character } = ctx;
+  const { character, case_ } = ctx;
   const prefix = getPrefix(character);
   
+  // Build occupation string with proper article and victim reference where appropriate
+  const occupation = character.suspect.occupation.toLowerCase();
+  let occupationText: string;
+  
+  // Add "the victim's" for roles that imply a direct relationship
+  const victimRelatedRoles = ['personal assistant', 'business partner', 'ex-wife', 'ex-husband', 'family lawyer', 'groundskeeper', 'butler', 'maid', 'chef', 'driver'];
+  const isVictimRelated = victimRelatedRoles.some(role => occupation.includes(role));
+  
+  if (isVictimRelated) {
+    occupationText = `${case_.victim.name}'s ${occupation}`;
+  } else {
+    // Add article "a" or "an" as needed
+    const startsWithVowel = /^[aeiou]/i.test(occupation);
+    occupationText = `${startsWithVowel ? 'an' : 'a'} ${occupation}`;
+  }
+  
   return {
-    response: `${prefix}My name is ${character.suspect.name}. I'm ${character.suspect.occupation.toLowerCase()}.`,
+    response: `${prefix}My name is ${character.suspect.name}. I'm ${occupationText}.`,
     evidenceUpdate: { nameRevealed: true },
   };
 }

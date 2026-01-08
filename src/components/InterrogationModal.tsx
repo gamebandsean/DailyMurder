@@ -22,7 +22,7 @@ export default function InterrogationModal({ visible, character, onClose }: Prop
   const [conversation, setConversation] = useState<{ type: 'q' | 'a'; text: string }[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
-  const { askQuestion, gameState, getQuestionsRemaining, canAskQuestions } = useGame();
+  const { askQuestion, askQuestionLLM, useLLM, gameState, getQuestionsRemaining, canAskQuestions } = useGame();
 
   const handleAsk = async () => {
     if (!question.trim() || !character || !canAskQuestions()) return;
@@ -32,10 +32,17 @@ export default function InterrogationModal({ visible, character, onClose }: Prop
     setConversation(prev => [...prev, { type: 'q', text: q }]);
     setIsTyping(true);
     
-    // Simulate thinking delay
-    await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+    let answer: string;
     
-    const answer = askQuestion(character.suspect.id, q);
+    if (useLLM) {
+      // Use LLM for more dynamic responses
+      answer = await askQuestionLLM(character.suspect.id, q);
+    } else {
+      // Simulate thinking delay for pattern-matching
+      await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+      answer = askQuestion(character.suspect.id, q);
+    }
+    
     setIsTyping(false);
     setConversation(prev => [...prev, { type: 'a', text: answer }]);
     

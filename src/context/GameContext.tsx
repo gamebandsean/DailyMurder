@@ -2,11 +2,15 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { GameState, DailyCase, CharacterEvidence, GameSettings } from '../types';
 import { generateDailyCase } from '../utils/storyGenerator';
 import { generateResponse } from '../utils/characterResponses';
+import { generateLLMResponse } from '../services/llmService';
 
 interface GameContextType {
   gameState: GameState;
   initializeGame: () => void;
   askQuestion: (characterId: string, question: string) => string;
+  askQuestionLLM: (characterId: string, question: string) => Promise<string>;
+  useLLM: boolean;
+  setUseLLM: (use: boolean) => void;
   makeAccusation: (suspectId: string) => boolean;
   resetGame: () => void;
   revealItem: (characterId: string) => void;
@@ -53,6 +57,7 @@ const initialGameState: GameState = {
 
 export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<GameState>(initialGameState);
+  const [useLLM, setUseLLM] = useState<boolean>(true); // Default to LLM mode
 
   const initializeGame = () => {
     const dailyCase = generateDailyCase();
@@ -161,6 +166,96 @@ export function GameProvider({ children }: { children: ReactNode }) {
     return response;
   };
 
+  const askQuestionLLM = async (characterId: string, question: string): Promise<string> => {
+    if (!gameState.currentCase) return "No case loaded.";
+    if (!canAskQuestions()) return "You've run out of time. The case has gone cold.";
+    
+    const character = gameState.currentCase.characters.find(
+      c => c.suspect.id === characterId
+    );
+    
+    if (!character) return "Character not found.";
+    
+    // Get conversation history for this character
+    const characterHistory = gameState.interrogationHistory
+      .filter(h => h.characterId === characterId)
+      .flatMap(h => [
+        { role: 'user' as const, content: h.question },
+        { role: 'assistant' as const, content: h.answer },
+      ]);
+    
+    try {
+      const { response, revealedInfo: newRevealedInfo, evidenceUpdate } = await generateLLMResponse(
+        question,
+        character,
+        gameState.currentCase.characters,
+        gameState.currentCase,
+        characterHistory,
+        gameState.revealedInfo
+      );
+      
+      // Update state with new info
+      setGameState(prev => {
+        const newRevealedInfoList = [...prev.revealedInfo];
+        const newRevealedItems = [...prev.revealedItems];
+        const newCharacterEvidence = new Map(prev.characterEvidence);
+        
+        // Track revealed info
+        if (newRevealedInfo) {
+          const alreadyKnown = newRevealedInfoList.some(
+            s => s.aboutCharacterId === newRevealedInfo.aboutCharacterId && 
+                 s.info === newRevealedInfo.info
+          );
+          if (!alreadyKnown) {
+            newRevealedInfoList.push({
+              fromCharacterId: characterId,
+              aboutCharacterId: newRevealedInfo.aboutCharacterId,
+              info: newRevealedInfo.info,
+              infoType: newRevealedInfo.infoType,
+            });
+          }
+        }
+        
+        // Update character evidence
+        if (evidenceUpdate) {
+          const currentEvidence = newCharacterEvidence.get(characterId) || createInitialEvidence();
+          newCharacterEvidence.set(characterId, {
+            ...currentEvidence,
+            ...evidenceUpdate,
+          });
+          
+          // If item was revealed, track it
+          if (evidenceUpdate.itemRevealed && !newRevealedItems.includes(characterId)) {
+            newRevealedItems.push(characterId);
+          }
+        }
+        
+        return {
+          ...prev,
+          questionsAsked: prev.questionsAsked + 1,
+          revealedInfo: newRevealedInfoList,
+          revealedItems: newRevealedItems,
+          characterEvidence: newCharacterEvidence,
+          interrogationHistory: [
+            ...prev.interrogationHistory,
+            {
+              characterId,
+              question,
+              answer: response,
+              timestamp: Date.now(),
+            },
+          ],
+        };
+      });
+      
+      return response;
+    } catch (error) {
+      console.error('LLM Error:', error);
+      // Fallback to pattern-matching
+      return askQuestion(characterId, question);
+    }
+  };
+
   const updateEvidence = (characterId: string, evidence: Partial<CharacterEvidence>) => {
     setGameState(prev => {
       const newCharacterEvidence = new Map(prev.characterEvidence);
@@ -239,6 +334,9 @@ export function GameProvider({ children }: { children: ReactNode }) {
         gameState,
         initializeGame,
         askQuestion,
+        askQuestionLLM,
+        useLLM,
+        setUseLLM,
         makeAccusation,
         resetGame,
         revealItem,
